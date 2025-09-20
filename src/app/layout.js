@@ -19,14 +19,17 @@ export const metadata = {
 
 import Header from "./customer/components/Header";
 import Footer from "./customer/components/Footer";
+import Providers from "./providers";
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-900 min-h-screen`}>
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <Providers>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
