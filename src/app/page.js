@@ -1,11 +1,10 @@
 
 import Link from "next/link";
-
+import Login from "./components/mainpage/Login";
 export default function Home() {
   return (
     <div>
-      <h1>Home Page</h1>
-      <Link href="/customer">Go to Customer Page</Link>
+      <Login />
     </div>
   );
 }
