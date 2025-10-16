@@ -95,7 +95,7 @@ export default function Login() {
                 className={`w-full px-4 py-3 bg-gray-800 border ${
                   errors.email ? "border-red-500" : "border-gray-600"
                 } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
-                placeholder="you@example.com"
+                placeholder="saman@Embula.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-400">{errors.email}</p>

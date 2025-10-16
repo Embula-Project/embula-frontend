@@ -1,12 +1,19 @@
 "use client";
 import { useState } from "react";
+import { registerUser } from "../../services/UserAuthServices";
 
 export default function SignUp({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({
     id: "",
     email: "",
     password: "",
+    confirmPassword: "",
     role: "",
+    // Customer-specific fields
+    firstName: "",
+    lastName: "",
+    address: "",
+    phoneNumber: "",
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,9 +42,37 @@ export default function SignUp({ onSwitchToLogin }) {
       newErrors.password = "Password must be at least 6 characters";
     }
     
+    // Confirm Password validation
+    if (!formData.confirmPassword) {
+      newErrors.confirmPassword = "Please confirm your password";
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    
     // Role validation
     if (!formData.role) {
       newErrors.role = "Role is required";
+    }
+    
+    // Customer-specific validations
+    if (formData.role === "CUSTOMER") {
+      if (!formData.firstName || formData.firstName.trim() === "") {
+        newErrors.firstName = "First name is required";
+      }
+      
+      if (!formData.lastName || formData.lastName.trim() === "") {
+        newErrors.lastName = "Last name is required";
+      }
+      
+      if (!formData.address || formData.address.trim() === "") {
+        newErrors.address = "Address is required";
+      }
+      
+      if (!formData.phoneNumber) {
+        newErrors.phoneNumber = "Phone number is required";
+      } else if (!/^\d{10}$/.test(formData.phoneNumber.replace(/[\s-]/g, ""))) {
+        newErrors.phoneNumber = "Please enter a valid 10-digit phone number";
+      }
     }
     
     setErrors(newErrors);
@@ -47,9 +82,23 @@ export default function SignUp({ onSwitchToLogin }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
     // Clear error for this field when user types
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
+    
+    // Real-time password matching validation
+    if (name === "confirmPassword" || name === "password") {
+      if (name === "confirmPassword" && value !== formData.password) {
+        setErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
+      } else if (name === "password" && formData.confirmPassword && value !== formData.confirmPassword) {
+        setErrors((prev) => ({ ...prev, confirmPassword: "Passwords do not match" }));
+      } else if (name === "confirmPassword" && value === formData.password) {
+        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+      } else if (name === "password" && value === formData.confirmPassword) {
+        setErrors((prev) => ({ ...prev, confirmPassword: "" }));
+      }
     }
   };
 
@@ -60,7 +109,7 @@ export default function SignUp({ onSwitchToLogin }) {
     
     setIsSubmitting(true);
     try {
-      // Prepare data with id as integer
+      // Prepare base payload with id as integer
       const payload = {
         id: parseInt(formData.id),
         email: formData.email,
@@ -68,34 +117,49 @@ export default function SignUp({ onSwitchToLogin }) {
         role: formData.role,
       };
       
-      // TODO: Replace with your actual signup API call
-      console.log("Signup attempt:", payload);
+      // Add customer-specific fields if role is CUSTOMER
+      if (formData.role === "CUSTOMER") {
+        payload.firstName = formData.firstName;
+        payload.lastName = formData.lastName;
+        payload.address = formData.address;
+        payload.phoneNumber = formData.phoneNumber;
+      }
       
-      // Simulated API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Call the register user API
+      console.log("Registering user with payload:", payload);
+      const response = await registerUser(payload);
+      console.log("Registration successful:", response);
       
-      // Handle successful signup here
-      alert("Signup successful!");
+      // Handle successful signup
+      alert("Signup successful! You can now login.");
+      
+      // Optionally switch to login page after successful registration
+      if (onSwitchToLogin) {
+        setTimeout(() => {
+          onSwitchToLogin();
+        }, 1500);
+      }
     } catch (error) {
-      setErrors({ submit: "Signup failed. Please try again." });
+      console.error("Registration error:", error);
+      setErrors({ submit: error.message || "Signup failed. Please try again." });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 py-8">
+      <div className="w-full max-w-2xl">
         {/* Card Container */}
-        <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-8">
+        <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-6 md:p-8">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
+          <div className="text-center mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Create Account</h1>
             <p className="text-gray-400 text-sm">Join us today</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
             {/* ID Field */}
             <div>
               <label htmlFor="id" className="block text-sm font-medium text-gray-300 mb-2">
@@ -131,7 +195,7 @@ export default function SignUp({ onSwitchToLogin }) {
                 className={`w-full px-4 py-3 bg-gray-800 border ${
                   errors.email ? "border-red-500" : "border-gray-600"
                 } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
-                placeholder="you@example.com"
+                placeholder="saman@embula.com"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-400">{errors.email}</p>
@@ -159,6 +223,32 @@ export default function SignUp({ onSwitchToLogin }) {
               )}
             </div>
 
+            {/* Confirm Password Field */}
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 bg-gray-800 border ${
+                  errors.confirmPassword ? "border-red-500" : 
+                  formData.confirmPassword && formData.confirmPassword === formData.password ? "border-green-500" :
+                  "border-gray-600"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                placeholder="Re-enter your password"
+              />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
+              )}
+              {!errors.confirmPassword && formData.confirmPassword && formData.confirmPassword === formData.password && (
+                <p className="mt-1 text-sm text-green-400">✓ Passwords match</p>
+              )}
+            </div>
+
             {/* Role Field */}
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-300 mb-2">
@@ -174,14 +264,103 @@ export default function SignUp({ onSwitchToLogin }) {
                 } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
               >
                 <option value="">Select a role</option>
-                <option value="customer">Customer</option>
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
+                <option value="CUSTOMER">Customer</option>
+                <option value="ADMIN">Admin</option>
               </select>
               {errors.role && (
                 <p className="mt-1 text-sm text-red-400">{errors.role}</p>
               )}
             </div>
+
+            {/* Conditional Customer Fields */}
+            {formData.role === "CUSTOMER" && (
+              <>
+                {/* First Name & Last Name - Two columns on larger screens */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-300 mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 bg-gray-800 border ${
+                        errors.firstName ? "border-red-500" : "border-gray-600"
+                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                      placeholder="John"
+                    />
+                    {errors.firstName && (
+                      <p className="mt-1 text-sm text-red-400">{errors.firstName}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-300 mb-2">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-3 bg-gray-800 border ${
+                        errors.lastName ? "border-red-500" : "border-gray-600"
+                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                      placeholder="Doe"
+                    />
+                    {errors.lastName && (
+                      <p className="mt-1 text-sm text-red-400">{errors.lastName}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Address Field */}
+                <div>
+                  <label htmlFor="address" className="block text-sm font-medium text-gray-300 mb-2">
+                    Address
+                  </label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    rows="3"
+                    className={`w-full px-4 py-3 bg-gray-800 border ${
+                      errors.address ? "border-red-500" : "border-gray-600"
+                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none`}
+                    placeholder="123 Main St, City, Country"
+                  />
+                  {errors.address && (
+                    <p className="mt-1 text-sm text-red-400">{errors.address}</p>
+                  )}
+                </div>
+
+                {/* Phone Number Field */}
+                <div>
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-300 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-gray-800 border ${
+                      errors.phoneNumber ? "border-red-500" : "border-gray-600"
+                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                    placeholder="0771234567"
+                  />
+                  {errors.phoneNumber && (
+                    <p className="mt-1 text-sm text-red-400">{errors.phoneNumber}</p>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Submit Error */}
             {errors.submit && (
