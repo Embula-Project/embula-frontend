@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { fetchMenu } from "../services/menuService";
 import { useDispatch } from "react-redux";
 import { addItem } from "../../../store/cartSlice";
+import ErrorDialog from "./ErrorDialog";
+import { useErrorDialog } from "../hooks/useErrorDialog";
 
 function buildImageSrc(imageType, imageData) {
   if (!imageData || !imageType || !imageType.startsWith("image/")) return null;
@@ -11,7 +13,7 @@ function buildImageSrc(imageType, imageData) {
 
 export default function Menu() {
   const [menu, setMenu] = useState(null);
-  const [error, setError] = useState(null);
+  const { error, showError, clearError } = useErrorDialog();
   const [page, setPage] = useState(0);
   const [isLoadingNext, setIsLoadingNext] = useState(false);
   const [isLoadingPrev, setIsLoadingPrev] = useState(false);
@@ -20,7 +22,7 @@ export default function Menu() {
   useEffect(() => {
     fetchMenu(0, 10)
       .then(setMenu)
-      .catch(() => setError("Failed to load menu"));
+      .catch(() => showError("Failed to load menu. Please try again later."));
   }, []);
 
   async function loadNextPage() {
@@ -33,9 +35,8 @@ export default function Menu() {
       const res = await fetchMenu(next, 10);
       setMenu(res);
       setPage(next);
-      setError(null);
     } catch (e) {
-      setError("Failed to load next page");
+      showError("Failed to load next page. Please try again.");
     } finally {
       setIsLoadingNext(false);
     }
@@ -49,23 +50,13 @@ export default function Menu() {
       const res = await fetchMenu(prev, 10);
       setMenu(res);
       setPage(prev);
-      setError(null);
     } catch (e) {
-      setError("Failed to load previous page");
+      showError("Failed to load previous page. Please try again.");
     } finally {
       setIsLoadingPrev(false);
     }
   }
 
-  if (error) return (
-    <div className="bg-red-900 border border-red-700 text-red-200 p-4 rounded-lg">
-      <div className="flex items-center">
-        <span className="text-red-400 mr-2">⚠</span>
-        {error}
-      </div>
-    </div>
-  );
-  
   if (!menu) return (
     <div className="bg-gray-900 p-8 rounded-lg text-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
@@ -74,7 +65,15 @@ export default function Menu() {
   );
 
   return (
-    <div className="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-2xl">
+    <>
+      <ErrorDialog 
+        open={!!error} 
+        onClose={clearError} 
+        message={error} 
+        title="Menu Error"
+      />
+      
+      <div className="bg-gray-900 border border-gray-700 p-6 rounded-xl shadow-2xl">
       {(() => {
         // helper values for pager
         const listLen = menu?.data?.list?.length ?? 0;
@@ -175,5 +174,6 @@ export default function Menu() {
         </button>
       </div>
     </div>
+    </>
   );
 }

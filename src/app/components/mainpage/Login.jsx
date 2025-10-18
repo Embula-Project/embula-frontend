@@ -1,14 +1,21 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import SignUp from "./SignUp";
+import { loginUser } from "../../services/UserAuthServices";
+import { handleLoginSuccess } from "../../services/authService";
+import ErrorDialog from "../../customer/components/ErrorDialog";
+import { useErrorDialog } from "../../customer/hooks/useErrorDialog";
 
 export default function Login() {
+  const router = useRouter();
   const [showSignUp, setShowSignUp] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [errors, setErrors] = useState({});
+  const { error, showError, clearError } = useErrorDialog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // If signup view is active, render SignUp component
@@ -53,23 +60,33 @@ export default function Login() {
     
     setIsSubmitting(true);
     try {
-      // TODO: Replace with your actual login API call
-      console.log("Login attempt:", formData);
+      const credentials = {
+        username: formData.email,
+        password: formData.password,
+      };
+  
+      const response = await loginUser(credentials);
+      const dashboardRoute = handleLoginSuccess(response);
+      router.push(dashboardRoute);
       
-      // Simulated API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Handle successful login here
-      alert("Login successful!");
     } catch (error) {
-      setErrors({ submit: "Login failed. Please try again." });
+      console.error("Login error:", error);
+      showError(error.message || "Login failed. Please check your credentials and try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+    <>
+      <ErrorDialog 
+        open={!!error} 
+        onClose={clearError} 
+        message={error} 
+        title="Login Error"
+      />
+      
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Card Container */}
         <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-8">
@@ -123,13 +140,6 @@ export default function Login() {
               )}
             </div>
 
-            {/* Submit Error */}
-            {errors.submit && (
-              <div className="bg-red-900 border border-red-700 text-red-200 p-3 rounded-lg text-sm">
-                {errors.submit}
-              </div>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -170,5 +180,6 @@ export default function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }

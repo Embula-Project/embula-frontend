@@ -1,15 +1,26 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCartCount, selectCartItems, incrementItem, decrementItem, removeItem } from "../../../store/cartSlice";
+import { clearAuthData } from "../../services/authService";
 
 export default function Header() {
+  const router = useRouter();
   const dispatch = useDispatch();
   const count = useSelector(selectCartCount);
   const items = useSelector(selectCartItems);
   const [open, setOpen] = useState(false);
 
   const total = useMemo(() => items.reduce((s, it) => s + (it.price || 0) * (it.qty || 1), 0), [items]);
+
+  const handleLogout = () => {
+    // Clear all auth data (localStorage + cookies)
+    clearAuthData();
+    
+    // Redirect to home page
+    router.push("/");
+  };
 
   return (
     <header className="bg-black border-b border-gray-800 p-4 md:p-6 flex justify-between items-center shadow-lg sticky top-0 z-40">
@@ -28,6 +39,16 @@ export default function Header() {
               {count}
             </span>
           )}
+        </button>
+
+        {/* Logout button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="bg-red-700 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 border border-red-600 font-medium"
+          aria-label="Logout"
+        >
+          Logout
         </button>
       </div>
 

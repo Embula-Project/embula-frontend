@@ -1,6 +1,8 @@
 "use client";
 import { useState } from "react";
 import { registerUser } from "../../services/UserAuthServices";
+import ErrorDialog from "../../customer/components/ErrorDialog";
+import { useErrorDialog } from "../../customer/hooks/useErrorDialog";
 
 export default function SignUp({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({
@@ -16,6 +18,7 @@ export default function SignUp({ onSwitchToLogin }) {
     phoneNumber: "",
   });
   const [errors, setErrors] = useState({});
+  const { error, showError, clearError } = useErrorDialog();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateForm = () => {
@@ -141,14 +144,22 @@ export default function SignUp({ onSwitchToLogin }) {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      setErrors({ submit: error.message || "Signup failed. Please try again." });
+      showError(error.message || "Signup failed. Please check your information and try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 py-8">
+    <>
+      <ErrorDialog 
+        open={!!error} 
+        onClose={clearError} 
+        message={error} 
+        title="Registration Error"
+      />
+      
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 py-8">
       <div className="w-full max-w-2xl">
         {/* Card Container */}
         <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-6 md:p-8">
@@ -362,13 +373,6 @@ export default function SignUp({ onSwitchToLogin }) {
               </>
             )}
 
-            {/* Submit Error */}
-            {errors.submit && (
-              <div className="bg-red-900 border border-red-700 text-red-200 p-3 rounded-lg text-sm">
-                {errors.submit}
-              </div>
-            )}
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -409,5 +413,6 @@ export default function SignUp({ onSwitchToLogin }) {
         </div>
       </div>
     </div>
+    </>
   );
 }
