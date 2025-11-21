@@ -67,7 +67,13 @@ export default function Login() {
   
       const response = await loginUser(credentials);
       const dashboardRoute = handleLoginSuccess(response);
+      
+      // Trigger a re-render of the navbar by dispatching a storage event
+      window.dispatchEvent(new Event('storage'));
+      
+      // Navigate to dashboard
       router.push(dashboardRoute);
+      router.refresh();
       
     } catch (error) {
       console.error("Login error:", error);
@@ -86,10 +92,22 @@ export default function Login() {
         title="Login Error"
       />
       
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+      <div 
+        className="min-h-screen flex items-center justify-center p-4 relative"
+        style={{
+          backgroundImage: 'url("/menupage.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/85 backdrop-blur-sm"></div>
+        
+      <div className="w-full max-w-md relative z-10">
         {/* Card Container */}
-        <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-8">
+        <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-900/30 rounded-xl shadow-2xl p-8">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
@@ -110,8 +128,8 @@ export default function Login() {
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.email ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.email ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="saman@Embula.com"
               />
               {errors.email && (
@@ -131,8 +149,8 @@ export default function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.password ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.password ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="Enter your password"
               />
               {errors.password && (
@@ -144,10 +162,10 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 ${
+              className={`w-full py-3 px-4 rounded-full font-semibold text-white transition-all duration-300 ${
                 isSubmitting
                   ? "bg-gray-700 cursor-not-allowed"
-                  : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                  : "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg hover:shadow-amber-500/50 hover:scale-105"
               }`}
             >
               {isSubmitting ? (
@@ -171,7 +189,7 @@ export default function Login() {
               <button 
                 type="button"
                 onClick={() => setShowSignUp(true)} 
-                className="text-purple-400 hover:text-purple-300 font-medium underline-offset-2 hover:underline"
+                className="text-amber-400 hover:text-amber-300 font-medium underline-offset-2 hover:underline"
               >
                 Sign up
               </button>

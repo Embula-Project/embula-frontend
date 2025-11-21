@@ -159,10 +159,22 @@ export default function SignUp({ onSwitchToLogin }) {
         title="Registration Error"
       />
       
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4 py-8">
-      <div className="w-full max-w-2xl">
+      <div 
+        className="min-h-screen flex items-center justify-center p-4 py-8 relative"
+        style={{
+          backgroundImage: 'url("/menupage.jpg")',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/85 backdrop-blur-sm"></div>
+        
+      <div className="w-full max-w-2xl relative z-10">
         {/* Card Container */}
-        <div className="bg-black border border-gray-700 rounded-xl shadow-2xl p-6 md:p-8">
+        <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-900/30 rounded-xl shadow-2xl p-6 md:p-8">
           {/* Header */}
           <div className="text-center mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">Create Account</h1>
@@ -183,8 +195,8 @@ export default function SignUp({ onSwitchToLogin }) {
                 value={formData.id}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.id ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.id ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="Enter your ID"
               />
               {errors.id && (
@@ -204,8 +216,8 @@ export default function SignUp({ onSwitchToLogin }) {
                 value={formData.email}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.email ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.email ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="saman@embula.com"
               />
               {errors.email && (
@@ -225,8 +237,8 @@ export default function SignUp({ onSwitchToLogin }) {
                 value={formData.password}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.password ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.password ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="At least 6 characters"
               />
               {errors.password && (
@@ -248,8 +260,8 @@ export default function SignUp({ onSwitchToLogin }) {
                 className={`w-full px-4 py-3 bg-gray-800 border ${
                   errors.confirmPassword ? "border-red-500" : 
                   formData.confirmPassword && formData.confirmPassword === formData.password ? "border-green-500" :
-                  "border-gray-600"
-                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  "border-amber-900/30"
+                } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                 placeholder="Re-enter your password"
               />
               {errors.confirmPassword && (
@@ -271,8 +283,8 @@ export default function SignUp({ onSwitchToLogin }) {
                 value={formData.role}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-gray-800 border ${
-                  errors.role ? "border-red-500" : "border-gray-600"
-                } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                  errors.role ? "border-red-500" : "border-amber-900/30"
+                } rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
               >
                 <option value="">Select a role</option>
                 <option value="CUSTOMER">Customer</option>
@@ -299,8 +311,8 @@ export default function SignUp({ onSwitchToLogin }) {
                       value={formData.firstName}
                       onChange={handleChange}
                       className={`w-full px-4 py-3 bg-gray-800 border ${
-                        errors.firstName ? "border-red-500" : "border-gray-600"
-                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                        errors.firstName ? "border-red-500" : "border-amber-900/30"
+                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                       placeholder="John"
                     />
                     {errors.firstName && (
@@ -319,8 +331,8 @@ export default function SignUp({ onSwitchToLogin }) {
                       value={formData.lastName}
                       onChange={handleChange}
                       className={`w-full px-4 py-3 bg-gray-800 border ${
-                        errors.lastName ? "border-red-500" : "border-gray-600"
-                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                        errors.lastName ? "border-red-500" : "border-amber-900/30"
+                      } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                       placeholder="Doe"
                     />
                     {errors.lastName && (
@@ -341,8 +353,8 @@ export default function SignUp({ onSwitchToLogin }) {
                     onChange={handleChange}
                     rows="3"
                     className={`w-full px-4 py-3 bg-gray-800 border ${
-                      errors.address ? "border-red-500" : "border-gray-600"
-                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none`}
+                      errors.address ? "border-red-500" : "border-amber-900/30"
+                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all resize-none`}
                     placeholder="123 Main St, City, Country"
                   />
                   {errors.address && (
@@ -362,8 +374,8 @@ export default function SignUp({ onSwitchToLogin }) {
                     value={formData.phoneNumber}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 bg-gray-800 border ${
-                      errors.phoneNumber ? "border-red-500" : "border-gray-600"
-                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all`}
+                      errors.phoneNumber ? "border-red-500" : "border-amber-900/30"
+                    } rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                     placeholder="0771234567"
                   />
                   {errors.phoneNumber && (
@@ -377,10 +389,10 @@ export default function SignUp({ onSwitchToLogin }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className={`w-full py-3 px-4 rounded-lg font-semibold text-white transition-all duration-200 ${
+              className={`w-full py-3 px-4 rounded-full font-semibold text-white transition-all duration-300 ${
                 isSubmitting
                   ? "bg-gray-700 cursor-not-allowed"
-                  : "bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 shadow-lg hover:shadow-xl"
+                  : "bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-lg hover:shadow-amber-500/50 hover:scale-105"
               }`}
             >
               {isSubmitting ? (
@@ -404,7 +416,7 @@ export default function SignUp({ onSwitchToLogin }) {
               <button 
                 type="button"
                 onClick={onSwitchToLogin} 
-                className="text-purple-400 hover:text-purple-300 font-medium underline-offset-2 hover:underline"
+                className="text-amber-400 hover:text-amber-300 font-medium underline-offset-2 hover:underline"
               >
                 Sign in
               </button>

@@ -15,11 +15,17 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // Only protect /admin and /customer routes
+  // Define protected routes
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isCustomerRoute = pathname === "/customer" || pathname.startsWith("/customer/");
+  
+  // Customer menu and checkout are public (checkout handles auth internally)
+  const publicCustomerRoutes = ["/customer/customerMenu", "/customer/checkout"];
+  const isPublicCustomerRoute = publicCustomerRoutes.some(route => pathname.startsWith(route));
+  
+  // Protect customer dashboard but allow public menu and checkout access
+  const isCustomerRoute = (pathname === "/customer" || pathname.startsWith("/customer/")) && !isPublicCustomerRoute;
 
-  // Allow access to public routes (login, signup, home)
+  // Allow access to public routes (login, signup, home, public customer pages)
   if (!isAdminRoute && !isCustomerRoute) {
     return NextResponse.next();
   }
