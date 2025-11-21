@@ -2,11 +2,40 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingCart, LogIn } from 'lucide-react';
+import { useSelector } from 'react-redux';
+import { selectCartCount } from '../../store/cartSlice';
+import CartPopup from '../customer/components/CartPopup';
+import UserProfileMenu from '../customer/components/UserProfileMenu';
+import { getUserData } from '../services/authService';
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const cartCount = useSelector(selectCartCount);
+
+  useEffect(() => {
+    // Check authentication on mount and when localStorage changes
+    const checkAuth = () => {
+      const user = getUserData();
+      if (user) {
+        setUserData(user);
+        setIsAuthenticated(true);
+      } else {
+        setUserData(null);
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
+
+    // Listen for storage changes (for multi-tab sync)
+    window.addEventListener('storage', checkAuth);
+    return () => window.removeEventListener('storage', checkAuth);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,22 +94,75 @@ const Navbar = () => {
               ))}
             </div>
 
-            {/* CTA Button */}
-            <div className="hidden lg:block">
+            {/* CTA Buttons */}
+            <div className="hidden lg:flex items-center gap-4">
               <Link href="/Reservation">
                 <button className="bg-gradient-to-r from-amber-600 to-amber-500 text-white px-4 xl:px-6 py-2 xl:py-3 rounded-full font-semibold hover:from-amber-500 hover:to-amber-400 transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105 text-sm xl:text-base">
                   Book Now
                 </button>
               </Link>
+              
+              {/* Cart Button */}
+              <button
+                onClick={() => setIsCartOpen(!isCartOpen)}
+                className="relative bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-full font-semibold hover:from-purple-500 hover:to-pink-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/50 hover:scale-105"
+                aria-label="Shopping Cart"
+              >
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center animate-pulse">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+
+              {/* User Profile or Login */}
+              {isAuthenticated && userData ? (
+                <UserProfileMenu userData={userData} />
+              ) : (
+                <Link href="/components/mainpage/Login">
+                  <button className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-green-500/50 hover:scale-105">
+                    <LogIn size={18} />
+                    <span>Login</span>
+                  </button>
+                </Link>
+              )}
             </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden text-amber-400 hover:text-amber-300 transition-colors p-2"
-            >
-              {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
-            </button>
+            {/* Mobile Menu, Cart & User Buttons */}
+            <div className="lg:hidden flex items-center gap-3">
+              {/* Mobile Cart Button */}
+              <button
+                onClick={() => setIsCartOpen(!isCartOpen)}
+                className="relative bg-gradient-to-r from-purple-600 to-pink-600 text-white p-2 rounded-full"
+                aria-label="Shopping Cart"
+              >
+                <ShoppingCart size={20} />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Mobile User Profile */}
+              {isAuthenticated && userData ? (
+                <UserProfileMenu userData={userData} />
+              ) : (
+                <Link href="/components/mainpage/Login">
+                  <button className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-2 rounded-full">
+                    <LogIn size={20} />
+                  </button>
+                </Link>
+              )}
+              
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="text-amber-400 hover:text-amber-300 transition-colors p-2"
+              >
+                {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -109,6 +191,9 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
+
+      {/* Cart Popup */}
+      <CartPopup isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
     </>
   );
 };
