@@ -600,7 +600,7 @@
 
 // export default RestaurantReservation;
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ReservationForm from '../Components/ReservationForm';
 import TimeSlotSelector from '../Components/TimeSlotSelector';
 import TableLayout from '../Components/TableLayout';
@@ -608,12 +608,33 @@ import { Users, Clock, Calendar } from 'lucide-react';
 
 const ReservationPage = () => {
   const [step, setStep] = useState(1);
+  const [currentBgIndex, setCurrentBgIndex] = useState(0);
   const [reservationData, setReservationData] = useState({
     members: '',
     mealType: '',
     selectedTime: '',
     selectedTable: null
   });
+
+  // Background images array - add your images to public folder
+  const backgroundImages = [
+    '/reservebg1.png',
+    '/reservebg2.jpg',
+    '/reservebg3.png',
+    '/reservebg4.jpeg',
+    '/reservebg5.png'
+  ];
+
+  // Auto-slide background images every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBgIndex((prevIndex) => 
+        (prevIndex + 1) % backgroundImages.length
+      );
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [backgroundImages.length]);
 
   const handleFormSubmit = (data) => {
     setReservationData(prev => ({ ...prev, ...data }));
@@ -642,13 +663,36 @@ const ReservationPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-800 via-black to-amber-950 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Table Reservation</h1>
-          <p className="text-amber-200">Reserve your perfect dining experience</p>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated Background Slider */}
+      <div className="absolute inset-0 z-0">
+        {backgroundImages.map((image, index) => (
+          <div
+            key={index}
+            className={`absolute inset-0 transition-opacity duration-1000 ${
+              index === currentBgIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            style={{
+              backgroundImage: `url('${image}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
+          >
+            {/* Dark overlay for better readability */}
+            <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/60 to-amber-950/70"></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="text-center mb-8 pt-24">
+            <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">Table Reservation</h1>
+            <p className="text-amber-200 drop-shadow">Reserve your perfect dining experience</p>
+          </div>
 
         {/* Progress Indicator */}
         <div className="flex justify-center mb-8">
@@ -674,7 +718,7 @@ const ReservationPage = () => {
         </div>
 
         {/* Step Content */}
-        <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-amber-800/30 p-6">
+        <div className="bg-black/40 backdrop-blur-sm rounded-2xl border border-amber-800/30 p-6 shadow-2xl">
           {step === 1 && (
             <ReservationForm onSubmit={handleFormSubmit} />
           )}
@@ -702,12 +746,13 @@ const ReservationPage = () => {
           <div className="text-center mt-6">
             <button
               onClick={resetForm}
-              className="text-amber-400 hover:text-amber-300 transition-colors"
+              className="text-amber-400 hover:text-amber-300 transition-colors drop-shadow"
             >
               Start Over
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

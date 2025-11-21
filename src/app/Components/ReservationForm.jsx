@@ -43,25 +43,25 @@ const ReservationForm = ({ onSubmit }) => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-white mb-2">Reservation Details</h2>
-        <p className="text-amber-200">Let's start with basic information</p>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-semibold text-white mb-2">Reservation Details</h2>
+        <p className="text-sm sm:text-base text-amber-200">Let's start with basic information</p>
       </div>
 
       {/* Number of Members */}
       <div className="space-y-4">
-        <label className="block text-lg font-medium text-white mb-4">
-          <Users className="inline-block w-5 h-5 mr-2" />
+        <label className="block text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">
+          <Users className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
           Number of Members
         </label>
-        <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
           {memberOptions.map(num => (
             <button
               key={num}
               type="button"
               onClick={() => handleChange('members', num.toString())}
-              className={`py-3 px-4 rounded-lg font-medium transition-all transform hover:scale-105 ${
+              className={`py-2 sm:py-3 px-3 sm:px-4 rounded-lg font-medium transition-all transform hover:scale-105 text-sm sm:text-base ${
                 formData.members === num.toString()
                   ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
                   : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border border-gray-700'
@@ -71,16 +71,16 @@ const ReservationForm = ({ onSubmit }) => {
             </button>
           ))}
         </div>
-        {errors.members && <p className="text-red-400 text-sm mt-2">{errors.members}</p>}
+        {errors.members && <p className="text-red-400 text-xs sm:text-sm mt-2">{errors.members}</p>}
       </div>
 
       {/* Meal Type */}
       <div className="space-y-4">
-        <label className="block text-lg font-medium text-white mb-4">
-          <Utensils className="inline-block w-5 h-5 mr-2" />
+        <label className="block text-base sm:text-lg font-medium text-white mb-3 sm:mb-4">
+          <Utensils className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" />
           Meal Type
         </label>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {mealTypes.map(meal => {
             const IconComponent = meal.icon;
             return (
@@ -88,15 +88,15 @@ const ReservationForm = ({ onSubmit }) => {
                 key={meal.value}
                 type="button"
                 onClick={() => handleChange('mealType', meal.value)}
-                className={`p-6 rounded-xl font-medium transition-all transform hover:scale-105 ${
+                className={`p-4 sm:p-6 rounded-xl font-medium transition-all transform hover:scale-105 ${
                   formData.mealType === meal.value
                     ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/30'
                     : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50 border border-gray-700'
                 }`}
               >
-                <IconComponent className="w-8 h-8 mx-auto mb-3" />
-                <div className="text-xl font-semibold">{meal.label}</div>
-                <div className="text-sm opacity-80 mt-1">
+                <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 sm:mb-3" />
+                <div className="text-lg sm:text-xl font-semibold">{meal.label}</div>
+                <div className="text-xs sm:text-sm opacity-80 mt-1">
                   {meal.value === 'breakfast' && '7:00 AM - 11:00 AM'}
                   {meal.value === 'lunch' && '12:00 PM - 4:00 PM'}
                   {meal.value === 'dinner' && '6:00 PM - 11:00 PM'}
@@ -105,14 +105,14 @@ const ReservationForm = ({ onSubmit }) => {
             );
           })}
         </div>
-        {errors.mealType && <p className="text-red-400 text-sm mt-2">{errors.mealType}</p>}
+        {errors.mealType && <p className="text-red-400 text-xs sm:text-sm mt-2">{errors.mealType}</p>}
       </div>
 
       {/* Submit Button */}
-      <div className="text-center pt-6">
+      <div className="text-center pt-4 sm:pt-6">
         <button
           onClick={handleSubmit}
-          className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-4 px-12 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-amber-600/30"
+          className="w-full sm:w-auto bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-3 sm:py-4 px-8 sm:px-12 rounded-lg transition-all transform hover:scale-105 shadow-lg shadow-amber-600/30 text-sm sm:text-base"
         >
           Continue to Time Selection
         </button>
