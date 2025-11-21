@@ -9,7 +9,7 @@ const ReservationForm = ({ onSubmit }) => {
 
   const [errors, setErrors] = useState({});
 
-  const memberOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15];
+  const memberOptions = [2, 4, 8];
 
   const mealTypes = [
     { value: 'breakfast', label: 'Breakfast', icon: Sun, color: 'amber' },
