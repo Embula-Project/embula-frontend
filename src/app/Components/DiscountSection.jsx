@@ -1,12 +1,87 @@
 'use client';
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import DiscountCard from './DiscountCard';
-import { discounts } from '@/data/discounts';
-import { Gift } from 'lucide-react';
+import { getDiscounts } from '../services/discountService';
+import { Gift, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const DiscountSection = () => {
+  const [discounts, setDiscounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const timeoutRef = useRef(null);
+
+  // Fetch discounts
+  useEffect(() => {
+    const fetchDiscounts = async () => {
+      try {
+        const data = await getDiscounts();
+        // Filter active discounts
+        const now = new Date();
+        const activeDiscounts = data.filter(d => {
+          if (!d.isActive) return false;
+          const validFrom = new Date(d.validFrom);
+          const validTo = new Date(d.validTo);
+          return now >= validFrom && now <= validTo;
+        });
+        setDiscounts(activeDiscounts);
+      } catch (error) {
+        console.error("Failed to fetch discounts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDiscounts();
+  }, []);
+
+  // Auto-slide logic
+  const resetTimeout = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+  };
+
+  useEffect(() => {
+    resetTimeout();
+    if (discounts.length > 0) {
+      timeoutRef.current = setTimeout(() => {
+        setCurrentIndex((prevIndex) => 
+          prevIndex === discounts.length - 1 ? 0 : prevIndex + 1
+        );
+      }, 5000); // 5 seconds per slide
+    }
+
+    return () => {
+      resetTimeout();
+    };
+  }, [currentIndex, discounts.length]);
+
+  const nextSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === discounts.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const prevSlide = () => {
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? discounts.length - 1 : prevIndex - 1
+    );
+  };
+
+  if (loading) {
+    return (
+      <section className="py-20 bg-gradient-to-b from-black via-gray-900 to-black min-h-[400px] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
+      </section>
+    );
+  }
+
+  if (discounts.length === 0) {
+    return null; // Don't show section if no discounts
+  }
+
   return (
-    <section className="py-20 bg-gradient-to-b from-black via-gray-900 to-black">
+    <section className="py-20 bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
@@ -24,29 +99,55 @@ const DiscountSection = () => {
           </p>
         </div>
 
-        {/* Discount Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {discounts.map((discount) => (
-            <DiscountCard key={discount.id} discount={discount} />
-          ))}
-        </div>
-
-        {/* View All Link */}
-        <div className="text-center mt-12">
-          <button className="group inline-flex items-center gap-2 text-amber-400 hover:text-amber-300 font-semibold transition-all duration-300">
-            View All Offers
-            <svg 
-              className="group-hover:translate-x-1 transition-transform duration-300" 
-              width="20" 
-              height="20" 
-              viewBox="0 0 24 24" 
-              fill="none" 
-              stroke="currentColor" 
-              strokeWidth="2"
-            >
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
+        {/* Carousel Container */}
+        <div className="relative group max-w-5xl mx-auto">
+          {/* Left Arrow */}
+          <button 
+            onClick={prevSlide}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-amber-600/80 text-white p-3 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 -ml-4 lg:-ml-12"
+          >
+            <ChevronLeft size={24} />
           </button>
+
+          {/* Right Arrow */}
+          <button 
+            onClick={nextSlide}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-black/50 hover:bg-amber-600/80 text-white p-3 rounded-full backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 -mr-4 lg:-mr-12"
+          >
+            <ChevronRight size={24} />
+          </button>
+
+          {/* Slides Window */}
+          <div className="overflow-hidden rounded-2xl h-[550px] md:h-[400px] bg-gray-900/50 border border-white/5">
+            <div 
+              className="flex h-full transition-transform duration-700 ease-in-out"
+              style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+            >
+              {discounts.map((discount) => (
+                <div 
+                  key={discount.id || Math.random()} 
+                  className="w-full flex-shrink-0 h-full p-1"
+                >
+                  <div className="mx-auto h-full">
+                     <DiscountCard discount={discount} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Dots Indicators */}
+          <div className="flex justify-center mt-8 gap-2">
+            {discounts.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIndex(idx)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentIndex === idx ? 'w-8 bg-amber-500' : 'w-2 bg-gray-600 hover:bg-gray-500'
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     </section>
