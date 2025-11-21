@@ -15,9 +15,9 @@ const Footer = () => {
   ];
 
   const openingHours = [
-    { day: 'Monday - Thursday', hours: '11:00 AM - 10:00 PM' },
-    { day: 'Friday - Saturday', hours: '11:00 AM - 11:00 PM' },
-    { day: 'Sunday', hours: '12:00 PM - 9:00 PM' }
+    { day: 'Monday - Thursday', hours: '9:00 AM - 10:00 PM' },
+    { day: 'Friday - Sunday', hours: '11:00 AM - 11:00 PM' },
+    
   ];
 
   return (
@@ -101,20 +101,23 @@ const Footer = () => {
               <div className="flex items-start gap-3 text-sm">
                 <MapPin className="text-amber-500 mt-1 flex-shrink-0" size={18} />
                 <div>
-                  <p className="text-gray-400">123 Gourmet Street</p>
-                  <p className="text-gray-400">Food City, FC 12345</p>
+                  <p className="text-gray-400">No 123, Park Street</p>
+                  <p className="text-gray-400">Bambalapitiya, Colombo</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Phone className="text-amber-500 flex-shrink-0" size={18} />
-                <a href="tel:+15551234567" className="text-gray-400 hover:text-amber-400 transition-colors">
-                  +1 (555) 123-4567
+                <a href="tel:+94 76 502 3921" className="text-gray-400 hover:text-amber-400 transition-colors">
+                  +94 76 502 3921
+                </a>
+                   <a href="tel:+94 71 137 4744" className="text-gray-400 hover:text-amber-400 transition-colors">
+                  +94 71 137 4744
                 </a>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="text-amber-500 flex-shrink-0" size={18} />
                 <a href="mailto:info@embula.com" className="text-gray-400 hover:text-amber-400 transition-colors">
-                  info@embula.com
+                  embularesturant@gmail.com
                 </a>
               </div>
             </div>
