@@ -18,11 +18,11 @@ export async function middleware(request) {
   // Define protected routes
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   
-  // Customer menu and checkout are public (checkout handles auth internally)
-  const publicCustomerRoutes = ["/customer/customerMenu", "/customer/checkout"];
+  // Customer menu is public, but checkout requires auth
+  const publicCustomerRoutes = ["/customer/customerMenu"];
   const isPublicCustomerRoute = publicCustomerRoutes.some(route => pathname.startsWith(route));
   
-  // Protect customer dashboard but allow public menu and checkout access
+  // Protect customer dashboard and checkout - only customer menu is public
   const isCustomerRoute = (pathname === "/customer" || pathname.startsWith("/customer/")) && !isPublicCustomerRoute;
 
   // Allow access to public routes (login, signup, home, public customer pages)
@@ -33,18 +33,26 @@ export async function middleware(request) {
   // Get token from cookies
   const token = request.cookies.get("authToken")?.value;
 
-  // If no token, redirect to home/login page
+  // If no token, redirect to login page immediately
   if (!token) {
-    console.log("No auth token found, redirecting to home");
-    return NextResponse.redirect(new URL("/", request.url));
+    console.log(`[Middleware] No token found for ${pathname}, redirecting to login`);
+    const loginUrl = new URL("/", request.url);
+    loginUrl.searchParams.set("login", "true");
+    loginUrl.searchParams.set("redirect", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   try {
     // Decode the JWT token
     const decoded = await decodeJwtTokenMiddleware(token);
-    const role = decoded.role;
+    const role = decoded?.role;
 
-    console.log(`Middleware: User role is ${role}, accessing ${pathname}`);
+    if (!role) {
+      console.log(`[Middleware] No role found in token for ${pathname}`);
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    console.log(`[Middleware] Role: ${role}, accessing: ${pathname}`);
 
     // Helper function to get role-based redirect
     const getRoleBasedRedirect = (userRole) => {
@@ -60,20 +68,20 @@ export async function middleware(request) {
 
     // Check if user is trying to access admin route without ADMIN role
     if (isAdminRoute && role !== "ADMIN") {
-      console.log(`Access denied: ${role} attempting to access admin route`);
+      console.log(`[Middleware] Access denied: ${role} → admin route`);
       const redirectTo = getRoleBasedRedirect(role);
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
 
     // Check if user is trying to access customer route without CUSTOMER role
     if (isCustomerRoute && role !== "CUSTOMER") {
-      console.log(`Access denied: ${role} attempting to access customer route`);
+      console.log(`[Middleware] Access denied: ${role} → customer route`);
       const redirectTo = getRoleBasedRedirect(role);
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
 
-    // User has correct role for the route
-    console.log(`Access granted: ${role} accessing ${pathname}`);
+    // User has correct role for the route - allow access
+    console.log(`[Middleware] ✓ Access granted: ${role} → ${pathname}`);
     return NextResponse.next();
   } catch (error) {
     console.error("Middleware error:", error.message);

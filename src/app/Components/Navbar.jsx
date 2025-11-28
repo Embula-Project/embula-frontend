@@ -120,7 +120,7 @@ const Navbar = () => {
               {isAuthenticated && userData ? (
                 <UserProfileMenu userData={userData} />
               ) : (
-                <Link href="/components/mainpage/Login">
+                <Link href="/login">
                   <button className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white px-4 py-2 rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-green-500/50 hover:scale-105">
                     <LogIn size={18} />
                     <span>Login</span>

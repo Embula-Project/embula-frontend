@@ -1,13 +1,16 @@
 /**
  * Auth Service - Handles authentication state management
  * Manages tokens, user sessions, and role-based routing
- * Now includes cookie management for middleware authentication
+ * Includes cookie management for middleware authentication
+ * 
+ * IMPORTANT: Only stores JWT token in localStorage/cookies
+ * User data is extracted from JWT token on-demand via getUserData()
+ * This ensures no sensitive user data is permanently stored in localStorage
  */
 
 import { decodeJWT, getRoleFromToken, isTokenExpired } from "./jwtService";
 
 const TOKEN_KEY = "authToken";
-const USER_KEY = "userData";
 
 /**
  * Set cookie in browser
@@ -49,10 +52,10 @@ function deleteCookie(name) {
 }
 
 /**
- * Store authentication data in localStorage AND cookies
+ * Store authentication token in localStorage AND cookies
+ * User data is extracted from the JWT token when needed via getUserData()
  * @param {Object} authData - Authentication response from API
- * @param {Object} authData.user - User object
- * @param {string} authData.token - JWT token
+ * @param {string} authData.token - JWT token containing user data
  */
 export function storeAuthData(authData) {
   if (!authData || !authData.token) {
@@ -67,12 +70,7 @@ export function storeAuthData(authData) {
     // Store token in cookies for middleware access
     setCookie(TOKEN_KEY, authData.token, 7); // 7 days expiration
     
-    // Store user data in localStorage
-    if (authData.user) {
-      localStorage.setItem(USER_KEY, JSON.stringify(authData.user));
-    }
-    
-    console.log("Auth data stored successfully in localStorage and cookies");
+    console.log("Auth token stored successfully in localStorage and cookies");
   } catch (error) {
     console.error("Error storing auth data:", error);
   }
@@ -92,15 +90,34 @@ export function getAuthToken() {
 }
 
 /**
- * Get stored user data
- * @returns {Object|null} User object or null if not found
+ * Get user data from JWT token
+ * @returns {Object|null} User object extracted from token or null if not found
  */
 export function getUserData() {
   try {
-    const userData = localStorage.getItem(USER_KEY);
-    return userData ? JSON.parse(userData) : null;
+    const token = getAuthToken();
+    if (!token) return null;
+    
+    if (isTokenExpired(token)) {
+      clearAuthData();
+      return null;
+    }
+    
+    const decoded = decodeJWT(token);
+    if (!decoded) return null;
+    
+    // Extract user data from JWT token
+    return {
+      email: decoded.sub,
+      role: decoded.role,
+      firstName: decoded.firstName,
+      lastName: decoded.lastName,
+      address: decoded.address,
+      phoneNumber: decoded.phoneNumber,
+      id: decoded.id
+    };
   } catch (error) {
-    console.error("Error retrieving user data:", error);
+    console.error("Error retrieving user data from token:", error);
     return null;
   }
 }
@@ -158,12 +175,11 @@ export function clearAuthData() {
   try {
     // Clear from localStorage
     localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
     
     // Clear from cookies
     deleteCookie(TOKEN_KEY);
     
-    console.log("Auth data cleared from localStorage and cookies");
+    console.log("Auth token cleared from localStorage and cookies");
   } catch (error) {
     console.error("Error clearing auth data:", error);
   }

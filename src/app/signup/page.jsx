@@ -4,7 +4,7 @@ import { registerUser } from "../../services/UserAuthServices";
 import ErrorDialog from "../../customer/components/ErrorDialog";
 import { useErrorDialog } from "../../customer/hooks/useErrorDialog";
 
-export default function SignUp({ onSwitchToLogin, returnUrl, onLoginSuccess }) {
+export default function SignUp({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({
     id: "",
     email: "",

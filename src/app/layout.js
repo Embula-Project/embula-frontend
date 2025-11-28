@@ -21,6 +21,7 @@ import Navbar from "./Components/Navbar";
 import Footer from "./Components/Footer";
 import ChatbotWidget from "./Components/ChatbotWidget";
 import Providers from "./providers";
+import PageTransition from "./Components/PageTransition";
 
 export default function RootLayout({ children }) {
   return (
@@ -28,7 +29,9 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black min-h-screen`}>
         <Providers>
           <Navbar />
-          <main className="flex-1">{children}</main>
+          <PageTransition>
+            <main className="flex-1">{children}</main>
+          </PageTransition>
           <Footer />
           <ChatbotWidget />
         </Providers>
