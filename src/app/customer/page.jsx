@@ -7,7 +7,7 @@ export default function CustomerPage() {
       <div className="max-w-4xl mx-auto">
         <div className="bg-black border border-gray-700 rounded-xl p-8 shadow-2xl">
           <h1 className="text-4xl font-bold text-white mb-4">
-            Welcome to <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Embula</span>
+            Welcome to <span className="bg-gradient-to-r from-amber-400 to-amber-600 bg-clip-text text-transparent">Embula</span>
           </h1>
           <p className="text-gray-300 text-lg mb-8">
             Discover our delicious menu crafted with the finest ingredients and passionate expertise.
@@ -33,7 +33,7 @@ export default function CustomerPage() {
 
           <div className="text-center">
             <Link href="/customer/customerMenu">
-              <button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-all duration-200 transform hover:scale-105 shadow-lg">
+              <button className="bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white px-8 py-4 rounded-full text-lg font-semibold transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105">
                 Explore Our Menu
               </button>
             </Link>

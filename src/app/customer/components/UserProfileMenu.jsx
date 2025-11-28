@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ShoppingBag, Settings } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { clearAuthData } from '../../services/authService';
 
 export default function UserProfileMenu({ userData }) {
@@ -23,8 +23,14 @@ export default function UserProfileMenu({ userData }) {
   const handleLogout = () => {
     clearAuthData();
     setIsOpen(false);
-    router.push('/');
-    router.refresh();
+    // Trigger storage event to update Navbar
+    window.dispatchEvent(new Event('storage'));
+    
+    // Add smooth transition delay
+    setTimeout(() => {
+      router.push('/');
+      router.refresh();
+    }, 150);
   };
 
   const getInitials = () => {
@@ -79,32 +85,9 @@ export default function UserProfileMenu({ userData }) {
                   <p className="text-gray-400 text-xs mb-1">Address</p>
                   <p className="text-white text-sm">{userData?.address || 'Not provided'}</p>
                 </div>
+                <div className="border-t border-amber-900/30 my-2"></div>
               </>
             )}
-
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                router.push('/customer');
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-900/20 rounded-lg transition-colors text-left"
-            >
-              <ShoppingBag size={18} className="text-amber-400" />
-              <span className="text-white text-sm">My Orders</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setIsOpen(false);
-                router.push('/customer/settings');
-              }}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-900/20 rounded-lg transition-colors text-left"
-            >
-              <Settings size={18} className="text-amber-400" />
-              <span className="text-white text-sm">Settings</span>
-            </button>
-
-            <div className="border-t border-amber-900/30 my-2"></div>
 
             <button
               onClick={handleLogout}

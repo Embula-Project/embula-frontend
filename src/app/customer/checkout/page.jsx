@@ -4,81 +4,40 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { selectCartItems } from '../../../store/cartSlice';
 import { getUserData } from '../../services/authService';
-import Login from '../../components/mainpage/Login';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const cartItems = useSelector(selectCartItems);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
-    // Check authentication
+    // Load user data from JWT token (middleware already verified authentication)
     const user = getUserData();
-    if (user) {
-      setIsAuthenticated(true);
-      setUserData(user);
-    }
+    setUserData(user);
     setIsLoading(false);
 
     // If cart is empty, redirect to menu
-    if (cartItems.length === 0 && !isLoading) {
+    if (cartItems.length === 0) {
       router.push('/customer/customerMenu');
     }
-  }, [cartItems, isLoading, router]);
+  }, [cartItems, router]);
 
+  // Show loading state only while fetching user data
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto mb-4"></div>
-          <p className="text-gray-300">Loading...</p>
+          <p className="text-gray-300">Loading checkout...</p>
         </div>
       </div>
     );
   }
 
-  // If not authenticated, show login prompt
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-black">
-        <div className="pt-20 pb-16 px-4">
-          <div className="max-w-2xl mx-auto text-center mb-8">
-            <div className="bg-amber-900/30 backdrop-blur-sm border border-amber-500/30 rounded-xl p-8 mb-8">
-              <div className="text-amber-400 text-6xl mb-4">🔐</div>
-              <h2 className="text-3xl font-bold text-white mb-4">
-                Sign In to Continue
-              </h2>
-              <p className="text-gray-300 text-lg mb-6">
-                Please log in to your account or create a new one to complete your order.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <div className="bg-black/50 border border-amber-900/30 rounded-lg p-4">
-                  <h3 className="text-amber-400 font-semibold mb-2">✓ Save your orders</h3>
-                  <p className="text-gray-400 text-sm">Track your order history</p>
-                </div>
-                <div className="bg-black/50 border border-amber-900/30 rounded-lg p-4">
-                  <h3 className="text-amber-400 font-semibold mb-2">✓ Faster checkout</h3>
-                  <p className="text-gray-400 text-sm">Save delivery details</p>
-                </div>
-                <div className="bg-black/50 border border-amber-900/30 rounded-lg p-4">
-                  <h3 className="text-amber-400 font-semibold mb-2">✓ Special offers</h3>
-                  <p className="text-gray-400 text-sm">Get exclusive deals</p>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Login Form */}
-          <Login />
-        </div>
-      </div>
-    );
-  }
-
-  // Authenticated checkout view
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // Middleware ensures user is authenticated and has CUSTOMER role
+  // Show checkout page
+  const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
 
   return (
     <div className="min-h-screen bg-black">
@@ -107,15 +66,15 @@ export default function CheckoutPage() {
                     <div key={item.id} className="flex gap-4 p-4 bg-black/50 border border-amber-900/20 rounded-lg">
                       <div className="w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-800">
                         {item.imageSrc ? (
-                          <img src={item.imageSrc} alt={item.itemName} className="w-full h-full object-cover" />
+                          <img src={item.imageSrc} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">No image</div>
                         )}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-white font-semibold">{item.itemName}</h3>
-                        <p className="text-gray-400 text-sm">Quantity: {item.quantity}</p>
-                        <p className="text-amber-400 font-bold mt-1">{item.price * item.quantity} LKR</p>
+                        <h3 className="text-white font-semibold">{item.name}</h3>
+                        <p className="text-gray-400 text-sm">Quantity: {item.qty}</p>
+                        <p className="text-amber-400 font-bold mt-1">{(Number(item.price) || 0) * (item.qty || 0)} LKR</p>
                       </div>
                     </div>
                   ))}

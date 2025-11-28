@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import SignUp from "./SignUp";
-import { loginUser } from "../../services/UserAuthServices";
-import { handleLoginSuccess } from "../../services/authService";
-import ErrorDialog from "../../customer/components/ErrorDialog";
-import { useErrorDialog } from "../../customer/hooks/useErrorDialog";
+import SignUp from "../Components/mainpage/SignUp";
+import { loginUser } from "../services/UserAuthServices";
+import { handleLoginSuccess } from "../services/authService";
+import ErrorDialog from "../customer/components/ErrorDialog";
+import { useErrorDialog } from "../customer/hooks/useErrorDialog";
 
-export default function Login({ onLoginSuccess, returnUrl }) {
+export default function Login() {
   const router = useRouter();
   const [showSignUp, setShowSignUp] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,7 +20,7 @@ export default function Login({ onLoginSuccess, returnUrl }) {
 
   // If signup view is active, render SignUp component
   if (showSignUp) {
-    return <SignUp onSwitchToLogin={() => setShowSignUp(false)} returnUrl={returnUrl} onLoginSuccess={onLoginSuccess} />;
+    return <SignUp onSwitchToLogin={() => setShowSignUp(false)} />;
   }
 
   const validateForm = () => {
@@ -71,17 +71,9 @@ export default function Login({ onLoginSuccess, returnUrl }) {
       // Trigger a re-render of the navbar by dispatching a storage event
       window.dispatchEvent(new Event('storage'));
       
-      // Add smooth transition delay before navigation
-      setTimeout(() => {
-        // If there's a callback (from home page redirect), call it
-        if (onLoginSuccess) {
-          onLoginSuccess();
-        } else {
-          // Default behavior: Navigate to dashboard
-          router.push(dashboardRoute);
-          router.refresh();
-        }
-      }, 300);
+      // Navigate to dashboard
+      router.push(dashboardRoute);
+      router.refresh();
       
     } catch (error) {
       console.error("Login error:", error);
@@ -114,15 +106,6 @@ export default function Login({ onLoginSuccess, returnUrl }) {
         <div className="absolute inset-0 bg-gradient-to-b from-black/85 via-black/80 to-black/85 backdrop-blur-sm"></div>
         
       <div className="w-full max-w-md relative z-10">
-        {/* Checkout Message - Only show when returnUrl exists */}
-        {returnUrl && (
-          <div className="mb-6 bg-amber-900/30 backdrop-blur-sm border border-amber-500/50 rounded-xl p-4 text-center animate-pulse">
-            <p className="text-amber-400 font-semibold text-lg">
-              To Continue the Checkout Process, Please Sign In
-            </p>
-          </div>
-        )}
-        
         {/* Card Container */}
         <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-900/30 rounded-xl shadow-2xl p-8">
           {/* Header */}

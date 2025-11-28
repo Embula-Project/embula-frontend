@@ -1,7 +1,18 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+// Initialize cart from localStorage when available (client-side only)
+let persistedCartItems = [];
+if (typeof window !== "undefined") {
+  try {
+    const raw = localStorage.getItem("cartItems");
+    if (raw) persistedCartItems = JSON.parse(raw);
+  } catch (e) {
+    console.error("Failed to parse persisted cart items", e);
+  }
+}
+
 const initialState = {
-  items: [], // { id, name, price, imageSrc, qty }
+  items: persistedCartItems || [], // { id, name, price, imageSrc, qty }
 };
 
 function getId(item) {
@@ -17,12 +28,12 @@ const cartSlice = createSlice({
       const id = getId(raw);
       const existing = state.items.find((it) => it.id === id);
       if (existing) {
-        existing.qty += 1;
+        existing.qty = (existing.qty || 0) + 1;
       } else {
         state.items.push({
           id,
           name: raw.itemName ?? raw.name ?? "Item",
-          price: raw.price ?? 0,
+          price: Number(raw.price) || 0,
           imageSrc: raw.imageSrc ?? null,
           qty: 1,
         });
@@ -31,13 +42,13 @@ const cartSlice = createSlice({
     incrementItem: (state, action) => {
       const id = action.payload;
       const existing = state.items.find((it) => it.id === id);
-      if (existing) existing.qty += 1;
+      if (existing) existing.qty = (existing.qty || 0) + 1;
     },
     decrementItem: (state, action) => {
       const id = action.payload;
       const existing = state.items.find((it) => it.id === id);
       if (existing) {
-        existing.qty -= 1;
+        existing.qty = (existing.qty || 0) - 1;
         if (existing.qty <= 0) {
           state.items = state.items.filter((it) => it.id !== id);
         }
