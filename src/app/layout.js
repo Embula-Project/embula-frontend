@@ -1,6 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-
+import Navbar from "./Components/Navbar";
+import ChatbotWidget from "./Components/ChatbotWidget";
+import Providers from "./providers";
+import PageTransition from "./Components/PageTransition";
+import Footer from "./Components/Footer";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -16,12 +20,6 @@ export const metadata = {
   description: "Experience culinary excellence at Embula Restaurant. Reserve your table today for an unforgettable dining experience.",
 };
 
-
-import Navbar from "./Components/Navbar";
-import Footer from "./Components/Footer";
-import ChatbotWidget from "./Components/ChatbotWidget";
-import Providers from "./providers";
-import PageTransition from "./Components/PageTransition";
 
 export default function RootLayout({ children }) {
   return (

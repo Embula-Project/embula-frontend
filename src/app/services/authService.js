@@ -170,16 +170,23 @@ export function getDashboardRoute(role) {
 
 /**
  * Clear all authentication data from localStorage AND cookies
+ * Also clears cart data on logout
  */
 export function clearAuthData() {
   try {
-    // Clear from localStorage
+    // Clear auth token from localStorage
     localStorage.removeItem(TOKEN_KEY);
     
-    // Clear from cookies
+    // Clear cart items from localStorage
+    localStorage.removeItem('cartItems');
+    
+    // Clear all other potential localStorage items
+    localStorage.clear();
+    
+    // Clear auth token from cookies
     deleteCookie(TOKEN_KEY);
     
-    console.log("Auth token cleared from localStorage and cookies");
+    console.log("Auth token and cart cleared from localStorage and cookies");
   } catch (error) {
     console.error("Error clearing auth data:", error);
   }

@@ -4,12 +4,18 @@ import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import { selectCartItems } from '../../../store/cartSlice';
 import { getUserData } from '../../services/authService';
+import { createCheckoutSession, prepareOrderData } from '../../services/checkoutService';
+import ErrorDialog from '../components/ErrorDialog';
+import { useErrorDialog } from '../hooks/useErrorDialog';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const cartItems = useSelector(selectCartItems);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const { error, showError, clearError } = useErrorDialog();
 
   useEffect(() => {
     // Load user data from JWT token (middleware already verified authentication)
@@ -39,7 +45,72 @@ export default function CheckoutPage() {
   // Show checkout page
   const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
 
+  const handlePlaceOrder = async () => {
+    setIsProcessingPayment(true);
+    try {
+      // Prepare order data from cart items
+      const orderData = prepareOrderData(cartItems);
+      
+      console.log('Placing order with data:', orderData);
+      
+      // Create checkout session
+      const session = await createCheckoutSession(orderData);
+      
+      if (session.sessionUrl) {
+        // Open payment URL in iframe
+        setPaymentUrl(session.sessionUrl);
+      } else {
+        throw new Error('No payment URL received');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      showError(error.message || 'Failed to process checkout. Please try again.');
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleClosePayment = () => {
+    setPaymentUrl(null);
+    setIsProcessingPayment(false);
+    // Optionally redirect to order confirmation or clear cart
+    router.push('/customer');
+  };
+
   return (
+    <>
+      <ErrorDialog 
+        open={!!error} 
+        onClose={clearError} 
+        message={error} 
+        title="Checkout Error"
+      />
+      
+      {/* Payment Modal with Iframe */}
+      {paymentUrl && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm">
+          <div className="relative w-full h-full max-w-7xl mx-auto p-4">
+            {/* Close Button */}
+            <button
+              onClick={handleClosePayment}
+              className="absolute top-8 right-8 z-[10000] bg-red-600 hover:bg-red-500 text-white p-3 rounded-full transition-all duration-300 shadow-lg hover:scale-110"
+              aria-label="Close Payment"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            
+            {/* Payment Iframe */}
+            <iframe
+              src={paymentUrl}
+              className="w-full h-full rounded-xl border-2 border-amber-500/50 shadow-2xl"
+              title="Payment Checkout"
+              allow="payment"
+            />
+          </div>
+        </div>
+      )}
+      
     <div className="min-h-screen bg-black">
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -128,13 +199,25 @@ export default function CheckoutPage() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    alert('Order placed successfully! (This is a demo)');
-                    router.push('/customer');
-                  }}
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105"
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessingPayment}
+                  className={`w-full py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg ${
+                    isProcessingPayment
+                      ? 'bg-gray-700 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white hover:shadow-amber-500/50 hover:scale-105'
+                  }`}
                 >
-                  Place Order
+                  {isProcessingPayment ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    'Place Order'
+                  )}
                 </button>
 
                 <p className="text-gray-400 text-xs text-center mt-4">
@@ -146,5 +229,6 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
