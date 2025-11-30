@@ -32,8 +32,11 @@ export default function UserProfileMenu({ userData }) {
     
     setIsOpen(false);
     
-    // Trigger storage event to update Navbar
+    // Trigger navbar update
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('authChange'));
+    
+    console.log('[Logout] Auth events dispatched');
     
     // Add smooth transition delay
     setTimeout(() => {

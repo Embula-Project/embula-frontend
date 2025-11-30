@@ -68,8 +68,11 @@ export default function Login({ onLoginSuccess, returnUrl }) {
       const response = await loginUser(credentials);
       const dashboardRoute = handleLoginSuccess(response);
       
-      // Trigger a re-render of the navbar by dispatching a storage event
+      // Trigger navbar update by dispatching custom auth event
       window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new Event('authChange'));
+      
+      console.log('[Login] Auth events dispatched');
       
       // Add smooth transition delay before navigation
       setTimeout(() => {

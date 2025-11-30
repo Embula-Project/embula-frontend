@@ -4,6 +4,7 @@
  */
 
 import apiClient from './apiClient';
+import { getUserId } from './authService';
 
 const CHECKOUT_BASE_URL = '/api/v1/food-order';
 
@@ -18,11 +19,18 @@ const CHECKOUT_BASE_URL = '/api/v1/food-order';
  */
 export async function createCheckoutSession(orderData) {
   try {
+    const customerId = getUserId();
+    
+    if (!customerId) {
+      throw new Error('User not authenticated. Please login again.');
+    }
+    
     const payload = {
       amount: orderData.amount,
       quantity: orderData.quantity || 1,
       orderName: orderData.orderName,
-      currency: orderData.currency || 'USD'
+      currency: orderData.currency || 'USD',
+      customer_id: customerId
     };
 
     console.log('Creating checkout session with payload:', payload);
