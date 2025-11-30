@@ -1,10 +1,12 @@
 /**
  * Axios API Client with Auth Interceptor
  * Automatically adds Bearer token to requests
+ * Handles automatic token refresh on 401 errors
  */
 
 import axios from 'axios';
 import { getAuthToken } from './authService';
+import { refreshAccessToken } from './tokenRefreshService';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MENU_API_URL || 'http://localhost:8081';
 
@@ -20,13 +22,13 @@ const apiClient = axios.create({
 // Request interceptor - adds auth token to headers
 apiClient.interceptors.request.use(
   (config) => {
-    // Get token from storage
+    // Get access token from storage
     const token = getAuthToken();
     
     if (token) {
       // Add Bearer token to Authorization header
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added Bearer token to request:', config.url);
+      console.log('Added Bearer access token to request:', config.url);
     }
     
     return config;
@@ -37,23 +39,35 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor - handles common errors
+// Response interceptor - handles common errors and token refresh
 apiClient.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config;
+
     if (error.response) {
-      // Server responded with error status
       const status = error.response.status;
       const message = error.response.data?.message || error.message;
       
       console.error(`API Error [${status}]:`, message);
       
-      // Handle specific status codes
-      if (status === 401) {
-        console.error('Unauthorized - token may be expired');
-        // Could dispatch logout action here if needed
+      // Handle 401 Unauthorized - try to refresh token
+      if (status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        
+        try {
+          console.log('Access token expired, attempting refresh...');
+          const newAccessToken = await refreshAccessToken();
+          
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          return apiClient(originalRequest);
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          return Promise.reject(refreshError);
+        }
       } else if (status === 403) {
         console.error('Forbidden - insufficient permissions');
       }

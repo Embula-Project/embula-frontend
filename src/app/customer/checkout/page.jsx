@@ -1,15 +1,22 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { selectCartItems } from '../../../store/cartSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCartItems, clearCart } from '../../../store/cartSlice';
 import { getUserData } from '../../services/authService';
+import { createCheckoutSession, prepareOrderData } from '../../services/checkoutService';
+import ErrorDialog from '../components/ErrorDialog';
+import { useErrorDialog } from '../hooks/useErrorDialog';
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const cartItems = useSelector(selectCartItems);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState(null);
+  const { error, showError, clearError } = useErrorDialog();
 
   useEffect(() => {
     // Load user data from JWT token (middleware already verified authentication)
@@ -39,7 +46,122 @@ export default function CheckoutPage() {
   // Show checkout page
   const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
 
+  const handlePlaceOrder = async () => {
+    setIsProcessingPayment(true);
+    try {
+      // Prepare order data from cart items
+      const orderData = prepareOrderData(cartItems);
+      
+      console.log('Placing order with data:', orderData);
+      
+      // Create checkout session
+      const session = await createCheckoutSession(orderData);
+      
+      if (session.sessionUrl) {
+        // Show confirmation dialog before redirect
+        setPaymentUrl(session.sessionUrl);
+      } else {
+        throw new Error('No payment URL received');
+      }
+    } catch (error) {
+      console.error('Checkout error:', error);
+      showError(error.message || 'Failed to process checkout. Please try again.');
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const handleConfirmRedirect = () => {
+    // Clear cart from Redux store
+    dispatch(clearCart());
+    
+    // Clear cart from localStorage
+    localStorage.removeItem('cartItems');
+    
+    console.log('[Checkout] Cart cleared, redirecting to payment');
+    
+    // Open Stripe payment page in new tab
+    window.open(paymentUrl, '_blank');
+    
+    // Reset state and redirect to customer dashboard
+    setPaymentUrl(null);
+    setIsProcessingPayment(false);
+    
+    // Redirect to customer dashboard after short delay
+    setTimeout(() => {
+      router.push('/customer');
+    }, 500);
+  };
+
+  const handleCancelRedirect = () => {
+    // User cancelled - stay on Embula site
+    setPaymentUrl(null);
+    setIsProcessingPayment(false);
+  };
+
   return (
+    <>
+      <ErrorDialog 
+        open={!!error} 
+        onClose={clearError} 
+        message={error} 
+        title="Checkout Error"
+      />
+      
+      {/* Payment Redirect Confirmation Modal */}
+      {paymentUrl && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/95 backdrop-blur-sm">
+          <div className="relative max-w-md w-full mx-4">
+            <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-500/50 rounded-xl shadow-2xl p-8">
+              {/* Icon */}
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Message */}
+              <h2 className="text-2xl font-bold text-white text-center mb-4">
+                Leaving Embula Site
+              </h2>
+              <p className="text-gray-300 text-center mb-6">
+                You are about to be redirected to our secure payment provider (Stripe) to complete your order. 
+                You will leave the Embula website temporarily.
+              </p>
+
+              {/* Security Note */}
+              <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-4 mb-6">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                  <p className="text-green-300 text-sm">
+                    Your payment information is processed securely by Stripe. We never store your card details.
+                  </p>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleCancelRedirect}
+                  className="flex-1 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full font-semibold transition-all duration-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmRedirect}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white rounded-full font-semibold transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105"
+                >
+                  Continue to Payment
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
     <div className="min-h-screen bg-black">
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-6xl mx-auto">
@@ -128,13 +250,25 @@ export default function CheckoutPage() {
                 </div>
 
                 <button
-                  onClick={() => {
-                    alert('Order placed successfully! (This is a demo)');
-                    router.push('/customer');
-                  }}
-                  className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105"
+                  onClick={handlePlaceOrder}
+                  disabled={isProcessingPayment}
+                  className={`w-full py-4 rounded-full font-bold text-lg transition-all duration-300 shadow-lg ${
+                    isProcessingPayment
+                      ? 'bg-gray-700 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white hover:shadow-amber-500/50 hover:scale-105'
+                  }`}
                 >
-                  Place Order
+                  {isProcessingPayment ? (
+                    <span className="flex items-center justify-center">
+                      <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Processing...
+                    </span>
+                  ) : (
+                    'Place Order'
+                  )}
                 </button>
 
                 <p className="text-gray-400 text-xs text-center mt-4">
@@ -146,5 +280,6 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

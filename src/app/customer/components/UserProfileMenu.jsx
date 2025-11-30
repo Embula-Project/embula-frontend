@@ -1,12 +1,15 @@
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useDispatch } from 'react-redux';
 import { LogOut } from 'lucide-react';
 import { clearAuthData } from '../../services/authService';
+import { clearCart } from '../../../store/cartSlice';
 
 export default function UserProfileMenu({ userData }) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
+  const dispatch = useDispatch();
   const menuRef = useRef(null);
 
   useEffect(() => {
@@ -21,10 +24,19 @@ export default function UserProfileMenu({ userData }) {
   }, []);
 
   const handleLogout = () => {
+    // Clear cart from Redux store
+    dispatch(clearCart());
+    
+    // Clear auth data and cart from localStorage/cookies
     clearAuthData();
+    
     setIsOpen(false);
-    // Trigger storage event to update Navbar
+    
+    // Trigger navbar update
     window.dispatchEvent(new Event('storage'));
+    window.dispatchEvent(new Event('authChange'));
+    
+    console.log('[Logout] Auth events dispatched');
     
     // Add smooth transition delay
     setTimeout(() => {

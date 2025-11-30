@@ -30,12 +30,12 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // Get token from cookies
-  const token = request.cookies.get("authToken")?.value;
+  // Get access token from cookies (using new token key)
+  const token = request.cookies.get("accessToken")?.value;
 
   // If no token, redirect to login page immediately
   if (!token) {
-    console.log(`[Middleware] No token found for ${pathname}, redirecting to login`);
+    console.log(`[Middleware] No access token found for ${pathname}, redirecting to login`);
     const loginUrl = new URL("/", request.url);
     loginUrl.searchParams.set("login", "true");
     loginUrl.searchParams.set("redirect", pathname);

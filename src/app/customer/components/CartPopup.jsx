@@ -14,7 +14,7 @@ export default function CartPopup({ isOpen, onClose }) {
 
   const handleCheckout = () => {
     // Check if user is authenticated before proceeding to checkout
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
     
     // Close cart with smooth transition
     onClose();

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { Menu, X, ShoppingCart, LogIn } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectCartCount } from '../../store/cartSlice';
@@ -10,6 +11,7 @@ import UserProfileMenu from '../customer/components/UserProfileMenu';
 import { getUserData } from '../services/authService';
 
 const Navbar = () => {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -18,9 +20,10 @@ const Navbar = () => {
   const cartCount = useSelector(selectCartCount);
 
   useEffect(() => {
-    // Check authentication on mount and when localStorage changes
+    // Check authentication on mount, route change, and when localStorage changes
     const checkAuth = () => {
       const user = getUserData();
+      console.log('[Navbar] Checking auth, user:', user);
       if (user) {
         setUserData(user);
         setIsAuthenticated(true);
@@ -34,8 +37,15 @@ const Navbar = () => {
 
     // Listen for storage changes (for multi-tab sync)
     window.addEventListener('storage', checkAuth);
-    return () => window.removeEventListener('storage', checkAuth);
-  }, []);
+    
+    // Listen for custom auth change event (for same-tab updates)
+    window.addEventListener('authChange', checkAuth);
+    
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('authChange', checkAuth);
+    };
+  }, [pathname]);
 
   useEffect(() => {
     const handleScroll = () => {

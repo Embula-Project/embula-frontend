@@ -10,7 +10,9 @@
 
 import { decodeJWT, getRoleFromToken, isTokenExpired } from "./jwtService";
 
-const TOKEN_KEY = "authToken";
+const ACCESS_TOKEN_KEY = "accessToken";
+const REFRESH_TOKEN_KEY = "refreshToken";
+const USER_ID_KEY = "userId";
 
 /**
  * Set cookie in browser
@@ -52,39 +54,77 @@ function deleteCookie(name) {
 }
 
 /**
- * Store authentication token in localStorage AND cookies
+ * Store authentication tokens in localStorage AND cookies
  * User data is extracted from the JWT token when needed via getUserData()
  * @param {Object} authData - Authentication response from API
- * @param {string} authData.token - JWT token containing user data
+ * @param {string} authData.accessToken - JWT access token containing user data
+ * @param {string} authData.refreshToken - JWT refresh token for token renewal
  */
 export function storeAuthData(authData) {
-  if (!authData || !authData.token) {
+  if (!authData || !authData.accessToken) {
     console.error("Invalid auth data provided to storeAuthData");
     return;
   }
 
   try {
-    // Store token in localStorage
-    localStorage.setItem(TOKEN_KEY, authData.token);
+    // Store access token in localStorage
+    localStorage.setItem(ACCESS_TOKEN_KEY, authData.accessToken);
     
-    // Store token in cookies for middleware access
-    setCookie(TOKEN_KEY, authData.token, 7); // 7 days expiration
+    // Store refresh token in localStorage
+    if (authData.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, authData.refreshToken);
+    }
     
-    console.log("Auth token stored successfully in localStorage and cookies");
+    // Store user ID if present (needed for checkout)
+    if (authData.user && authData.user.id) {
+      localStorage.setItem(USER_ID_KEY, authData.user.id.toString());
+    }
+    
+    // Store access token in cookies for middleware access
+    setCookie(ACCESS_TOKEN_KEY, authData.accessToken, 7); // 7 days expiration
+    
+    console.log("Access and refresh tokens stored successfully");
   } catch (error) {
     console.error("Error storing auth data:", error);
   }
 }
 
 /**
- * Get stored auth token
- * @returns {string|null} Auth token or null if not found
+ * Get stored access token
+ * @returns {string|null} Access token or null if not found
  */
 export function getAuthToken() {
   try {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
   } catch (error) {
-    console.error("Error retrieving auth token:", error);
+    console.error("Error retrieving access token:", error);
+    return null;
+  }
+}
+
+/**
+ * Get stored refresh token
+ * @returns {string|null} Refresh token or null if not found
+ */
+export function getRefreshToken() {
+  try {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  } catch (error) {
+    console.error("Error retrieving refresh token:", error);
+    return null;
+  }
+}
+
+/**
+ * Get stored user ID
+ * @returns {number|null} User ID or null if not found
+ */
+export function getUserId() {
+  try {
+    const userId = localStorage.getItem(USER_ID_KEY);
+    return userId ? parseInt(userId, 10) : null;
+  } catch (error) {
+    console.error("Error retrieving user ID:", error);
     return null;
   }
 }
@@ -170,16 +210,25 @@ export function getDashboardRoute(role) {
 
 /**
  * Clear all authentication data from localStorage AND cookies
+ * Also clears cart data on logout
  */
 export function clearAuthData() {
   try {
-    // Clear from localStorage
-    localStorage.removeItem(TOKEN_KEY);
+    // Clear tokens from localStorage
+    localStorage.removeItem(ACCESS_TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
+    localStorage.removeItem(USER_ID_KEY);
     
-    // Clear from cookies
-    deleteCookie(TOKEN_KEY);
+    // Clear cart items from localStorage
+    localStorage.removeItem('cartItems');
     
-    console.log("Auth token cleared from localStorage and cookies");
+    // Clear all other potential localStorage items
+    localStorage.clear();
+    
+    // Clear access token from cookies
+    deleteCookie(ACCESS_TOKEN_KEY);
+    
+    console.log("Auth tokens and cart cleared from localStorage and cookies");
   } catch (error) {
     console.error("Error clearing auth data:", error);
   }
@@ -206,7 +255,7 @@ export function isAuthenticated() {
 
 /**
  * Handle login success - store data and get redirect route
- * @param {Object} authResponse - API response with user and token
+ * @param {Object} authResponse - API response with user, accessToken, and refreshToken
  * @returns {string} Dashboard route to redirect to
  */
 export function handleLoginSuccess(authResponse) {
@@ -215,11 +264,11 @@ export function handleLoginSuccess(authResponse) {
   // Store auth data
   storeAuthData(authResponse);
   
-  // Get role from token
-  const role = getRoleFromToken(authResponse.token);
+  // Get role from access token
+  const role = getRoleFromToken(authResponse.accessToken);
   
   if (!role) {
-    console.error("Could not extract role from token");
+    console.error("Could not extract role from access token");
     return "/";
   }
   
