@@ -1,186 +1,160 @@
 /**
- * Auth Service - Handles authentication state management
- * Manages tokens, user sessions, and role-based routing
- * Includes cookie management for middleware authentication
+ * Auth Service - Handles authentication state management with HTTP-only cookies
  * 
- * IMPORTANT: Only stores JWT token in localStorage/cookies
- * User data is extracted from JWT token on-demand via getUserData()
- * This ensures no sensitive user data is permanently stored in localStorage
+ * SECURITY MODEL:
+ * - Tokens (accessToken, refreshToken) are stored in HTTP-only cookies by backend
+ * - Browser automatically sends cookies with every request
+ * - JavaScript cannot access tokens (XSS protection)
+ * - User data is fetched from /auth/me endpoint and stored in memory
+ * - In-memory cache prevents excessive API calls
+ * 
+ * INDUSTRY BEST PRACTICES:
+ * 1. HTTP-only cookies for token storage (OWASP recommendation)
+ * 2. In-memory user state with cache invalidation
+ * 3. Single source of truth via /auth/me endpoint
+ * 4. Automatic re-fetch on page refresh
+ * 5. Event-driven state updates across components
  */
 
-import { decodeJWT, getRoleFromToken, isTokenExpired } from "./JwtService";
+import axios from 'axios';
 
-const ACCESS_TOKEN_KEY = "accessToken";
-const REFRESH_TOKEN_KEY = "refreshToken";
-const USER_ID_KEY = "userId";
+const BASE_URL = process.env.NEXT_PUBLIC_MENU_API_URL || 'http://localhost:8081';
+
+// In-memory user state (cleared on page refresh)
+let currentUser = null;
+let isFetchingUser = false;
+let userFetchPromise = null;
 
 /**
- * Set cookie in browser
- * @param {string} name - Cookie name
- * @param {string} value - Cookie value
- * @param {number} days - Expiration in days
+ * Fetch current user from backend /auth/me endpoint
+ * Uses HTTP-only cookie automatically sent by browser
+ * Implements smart caching to prevent duplicate calls
+ * 
+ * @returns {Promise<Object|null>} User object or null if not authenticated
  */
-function setCookie(name, value, days = 7) {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  const expiresStr = "expires=" + expires.toUTCString();
-  document.cookie = `${name}=${value};${expiresStr};path=/;SameSite=Strict`;
-  console.log(`Cookie set: ${name}`);
-}
-
-/**
- * Get cookie value
- * @param {string} name - Cookie name
- * @returns {string|null} Cookie value or null
- */
-function getCookie(name) {
-  const nameEQ = name + "=";
-  const ca = document.cookie.split(";");
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    while (c.charAt(0) === " ") c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-}
-
-/**
- * Delete cookie
- * @param {string} name - Cookie name
- */
-function deleteCookie(name) {
-  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
-  console.log(`Cookie deleted: ${name}`);
-}
-
-/**
- * Store authentication tokens in localStorage AND cookies
- * User data is extracted from the JWT token when needed via getUserData()
- * @param {Object} authData - Authentication response from API
- * @param {string} authData.accessToken - JWT access token containing user data
- * @param {string} authData.refreshToken - JWT refresh token for token renewal
- */
-export function storeAuthData(authData) {
-  if (!authData || !authData.accessToken) {
-    console.error("Invalid auth data provided to storeAuthData");
-    return;
+export async function fetchCurrentUser() {
+  // Return cached user if available
+  if (currentUser) {
+    console.log('[AuthService] Returning cached user:', currentUser.email);
+    return currentUser;
   }
 
-  try {
-    // Store access token in localStorage
-    localStorage.setItem(ACCESS_TOKEN_KEY, authData.accessToken);
-    
-    // Store refresh token in localStorage
-    if (authData.refreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_KEY, authData.refreshToken);
+  // If already fetching, return the existing promise to prevent duplicate calls
+  if (isFetchingUser && userFetchPromise) {
+    console.log('[AuthService] Fetch already in progress, waiting...');
+    return userFetchPromise;
+  }
+
+  // Start new fetch
+  isFetchingUser = true;
+  userFetchPromise = (async () => {
+    try {
+      console.log('[AuthService] Fetching current user from /auth/me...');
+      
+      const response = await axios.get(`${BASE_URL}/api/v1/login/auth/me`, {
+        withCredentials: true, // Include HTTP-only cookies
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.data.code === 200 && response.data.data) {
+        currentUser = response.data.data;
+        console.log('[AuthService] User fetched successfully:', currentUser.email, 'Role:', currentUser.role);
+        return currentUser;
+      } else {
+        console.warn('[AuthService] Unexpected response format from /auth/me');
+        currentUser = null;
+        return null;
+      }
+    } catch (error) {
+      console.error('[AuthService] Failed to fetch current user:', error.response?.status || error.message);
+      currentUser = null;
+      return null;
+    } finally {
+      isFetchingUser = false;
+      userFetchPromise = null;
     }
-    
-    // Store user ID if present (needed for checkout)
-    if (authData.user && authData.user.id) {
-      localStorage.setItem(USER_ID_KEY, authData.user.id.toString());
-    }
-    
-    // Store access token in cookies for middleware access
-    setCookie(ACCESS_TOKEN_KEY, authData.accessToken, 7); // 7 days expiration
-    
-    console.log("Access and refresh tokens stored successfully");
-  } catch (error) {
-    console.error("Error storing auth data:", error);
-  }
+  })();
+
+  return userFetchPromise;
 }
 
 /**
- * Get stored access token
- * @returns {string|null} Access token or null if not found
- */
-export function getAuthToken() {
-  try {
-    return localStorage.getItem(ACCESS_TOKEN_KEY);
-  } catch (error) {
-    console.error("Error retrieving access token:", error);
-    return null;
-  }
-}
-
-/**
- * Get stored refresh token
- * @returns {string|null} Refresh token or null if not found
- */
-export function getRefreshToken() {
-  try {
-    return localStorage.getItem(REFRESH_TOKEN_KEY);
-  } catch (error) {
-    console.error("Error retrieving refresh token:", error);
-    return null;
-  }
-}
-
-/**
- * Get stored user ID
- * @returns {number|null} User ID or null if not found
- */
-export function getUserId() {
-  try {
-    const userId = localStorage.getItem(USER_ID_KEY);
-    return userId ? parseInt(userId, 10) : null;
-  } catch (error) {
-    console.error("Error retrieving user ID:", error);
-    return null;
-  }
-}
-
-/**
- * Get user data from JWT token
- * @returns {Object|null} User object extracted from token or null if not found
+ * Get current user from memory cache
+ * Does NOT make API call - use fetchCurrentUser() for that
+ * @returns {Object|null} Cached user object or null
  */
 export function getUserData() {
-  try {
-    const token = getAuthToken();
-    if (!token) return null;
-    
-    if (isTokenExpired(token)) {
-      clearAuthData();
-      return null;
-    }
-    
-    const decoded = decodeJWT(token);
-    if (!decoded) return null;
-    
-    // Extract user data from JWT token
-    return {
-      email: decoded.sub,
-      role: decoded.role,
-      firstName: decoded.firstName,
-      lastName: decoded.lastName,
-      address: decoded.address,
-      phoneNumber: decoded.phoneNumber,
-      id: decoded.id
-    };
-  } catch (error) {
-    console.error("Error retrieving user data from token:", error);
-    return null;
-  }
+  return currentUser;
 }
 
 /**
- * Get user role from stored token
+ * Get user ID from cached user data
+ * @returns {number|null} User ID or null
+ */
+export function getUserId() {
+  return currentUser?.id || null;
+}
+
+/**
+ * Get user role from cached user data
  * @returns {string|null} User role or null
  */
 export function getUserRole() {
-  const token = getAuthToken();
-  
-  if (!token) {
-    console.warn("No auth token found");
-    return null;
-  }
+  return currentUser?.role || null;
+}
 
-  if (isTokenExpired(token)) {
-    console.warn("Auth token has expired");
-    clearAuthData();
-    return null;
-  }
+/**
+ * Set user data in memory cache
+ * Used after successful login or user fetch
+ * @param {Object} userData - User object from backend
+ */
+export function setUserData(userData) {
+  currentUser = userData;
+  console.log('[AuthService] User data cached:', userData?.email);
+}
 
-  return getRoleFromToken(token);
+/**
+ * Clear user data from memory cache
+ * Called on logout or authentication failure
+ */
+export function clearUserData() {
+  currentUser = null;
+  isFetchingUser = false;
+  userFetchPromise = null;
+  console.log('[AuthService] User data cleared from memory');
+}
+
+/**
+ * Logout user - clears memory cache and calls backend logout endpoint
+ * Backend will clear HTTP-only cookies
+ * @returns {Promise<boolean>} Success status
+ */
+export async function logout() {
+  try {
+    console.log('[AuthService] Logging out...');
+    
+    // Call backend logout to clear HTTP-only cookies
+    await axios.post(`${BASE_URL}/api/v1/login/logout`, {}, {
+      withCredentials: true,
+    });
+    
+    // Clear in-memory user data
+    clearUserData();
+    
+    // Clear cart from localStorage
+    localStorage.removeItem('cartItems');
+    
+    console.log('[AuthService] Logout successful');
+    return true;
+  } catch (error) {
+    console.error('[AuthService] Logout error:', error);
+    // Clear local state even if backend call fails
+    clearUserData();
+    localStorage.removeItem('cartItems');
+    return false;
+  }
 }
 
 /**
@@ -209,73 +183,41 @@ export function getDashboardRoute(role) {
 }
 
 /**
- * Clear all authentication data from localStorage AND cookies
- * Also clears cart data on logout
- */
-export function clearAuthData() {
-  try {
-    // Clear tokens from localStorage
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
-    localStorage.removeItem(USER_ID_KEY);
-    
-    // Clear cart items from localStorage
-    localStorage.removeItem('cartItems');
-    
-    // Clear all other potential localStorage items
-    localStorage.clear();
-    
-    // Clear access token from cookies
-    deleteCookie(ACCESS_TOKEN_KEY);
-    
-    console.log("Auth tokens and cart cleared from localStorage and cookies");
-  } catch (error) {
-    console.error("Error clearing auth data:", error);
-  }
-}
-
-/**
  * Check if user is authenticated
- * @returns {boolean} True if user has valid token
+ * @returns {Promise<boolean>} True if user is authenticated
  */
-export function isAuthenticated() {
-  const token = getAuthToken();
-  
-  if (!token) {
-    return false;
-  }
-
-  if (isTokenExpired(token)) {
-    clearAuthData();
-    return false;
-  }
-
-  return true;
+export async function isAuthenticated() {
+  const user = await fetchCurrentUser();
+  return user !== null;
 }
 
 /**
- * Handle login success - store data and get redirect route
- * @param {Object} authResponse - API response with user, accessToken, and refreshToken
- * @returns {string} Dashboard route to redirect to
+ * Handle login success - fetches user data and returns redirect route
+ * Called after backend login returns success with HTTP-only cookies
+ * 
+ * @param {Object} loginResponse - Login response from backend (contains user data)
+ * @returns {Promise<string>} Dashboard route to redirect to
  */
-export function handleLoginSuccess(authResponse) {
-  console.log("Processing login success:", authResponse);
+export async function handleLoginSuccess(loginResponse) {
+  console.log('[AuthService] Processing login success...');
   
-  // Store auth data
-  storeAuthData(authResponse);
+  // Fetch current user from /auth/me (HTTP-only cookie is now set)
+  const user = await fetchCurrentUser();
   
-  // Get role from access token
-  const role = getRoleFromToken(authResponse.accessToken);
-  
-  if (!role) {
-    console.error("Could not extract role from access token");
+  if (!user) {
+    console.error('[AuthService] Failed to fetch user after login');
     return "/";
   }
   
-  // Get appropriate dashboard route
-  const dashboardRoute = getDashboardRoute(role);
+  console.log(`[AuthService] User ${user.email} logged in, role: ${user.role}`);
   
-  console.log(`User role: ${role}, redirecting to: ${dashboardRoute}`);
+  // Dispatch auth change events
+  window.dispatchEvent(new Event('storage'));
+  window.dispatchEvent(new CustomEvent('authChange', { detail: { user } }));
+  
+  // Get appropriate dashboard route
+  const dashboardRoute = getDashboardRoute(user.role);
+  console.log(`[AuthService] Redirecting to: ${dashboardRoute}`);
   
   return dashboardRoute;
 }

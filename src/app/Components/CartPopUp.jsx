@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
 import { selectCartItems, incrementItem, decrementItem, removeItem } from '../../store/cartSlice';
+import { getUserData } from '../services/AuthService';
 
 export default function CartPopup({ isOpen, onClose }) {
   const cartItems = useSelector(selectCartItems);
@@ -13,20 +14,23 @@ export default function CartPopup({ isOpen, onClose }) {
   const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
 
   const handleCheckout = () => {
-    // Check if user is authenticated before proceeding to checkout
-    const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    // Check if user is authenticated by checking in-memory cache
+    const user = getUserData();
+    
+    console.log('[CartPopup] Checkout clicked, user:', user);
     
     // Close cart with smooth transition
     onClose();
     
     // Add slight delay for smoother visual transition
     setTimeout(() => {
-      if (!token) {
+      if (!user) {
         // Not authenticated - redirect to login page
-        console.log('User not authenticated, redirecting to login');
+        console.log('[CartPopup] User not authenticated, redirecting to login');
         router.push('/?login=true&return=/checkout');
       } else {
         // Authenticated - proceed to checkout
+        console.log('[CartPopup] User authenticated, proceeding to checkout');
         router.push('/checkout');
       }
     }, 200);

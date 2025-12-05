@@ -8,44 +8,17 @@ import { useSelector } from 'react-redux';
 import { selectCartCount } from '../../store/cartSlice';
 import CartPopup from './CartPopUp';
 import UserProfileMenu from './UserProfileMenu';
-import { getUserData } from '../services/AuthService';
+import { useAuth } from '../hooks/useAuth';
 
 const Navbar = () => {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [userData, setUserData] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const cartCount = useSelector(selectCartCount);
-
-  useEffect(() => {
-    // Check authentication on mount, route change, and when localStorage changes
-    const checkAuth = () => {
-      const user = getUserData();
-      console.log('[Navbar] Checking auth, user:', user);
-      if (user) {
-        setUserData(user);
-        setIsAuthenticated(true);
-      } else {
-        setUserData(null);
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-
-    // Listen for storage changes (for multi-tab sync)
-    window.addEventListener('storage', checkAuth);
-    
-    // Listen for custom auth change event (for same-tab updates)
-    window.addEventListener('authChange', checkAuth);
-    
-    return () => {
-      window.removeEventListener('storage', checkAuth);
-      window.removeEventListener('authChange', checkAuth);
-    };
-  }, [pathname]);
+  
+  // Use auth hook for centralized authentication state
+  const { user: userData, isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -127,7 +100,13 @@ const Navbar = () => {
               </button>
 
               {/* User Profile or Login */}
-              {isAuthenticated && userData ? (
+              {isLoading ? (
+                // Loading skeleton to prevent flash of login button
+                <div className="flex items-center gap-2 bg-gray-700/50 px-4 py-2 rounded-full animate-pulse">
+                  <div className="w-8 h-8 bg-gray-600 rounded-full"></div>
+                  <div className="w-16 h-4 bg-gray-600 rounded hidden sm:block"></div>
+                </div>
+              ) : isAuthenticated && userData ? (
                 <UserProfileMenu userData={userData} />
               ) : (
                 <Link href="/login">
@@ -156,10 +135,12 @@ const Navbar = () => {
               </button>
 
               {/* Mobile User Profile */}
-              {isAuthenticated && userData ? (
+              {isLoading ? (
+                <div className="w-10 h-10 bg-gray-700/50 rounded-full animate-pulse"></div>
+              ) : isAuthenticated && userData ? (
                 <UserProfileMenu userData={userData} />
               ) : (
-                <Link href="/components/mainpage/Login">
+                <Link href="/login">
                   <button className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-2 rounded-full">
                     <LogIn size={20} />
                   </button>

@@ -3,11 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { LogOut } from 'lucide-react';
-import { clearAuthData } from '../services/AuthService';
+import { logout } from '../services/AuthService';
 import { clearCart } from '../../store/cartSlice';
 
 export default function UserProfileMenu({ userData }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
   const menuRef = useRef(null);
@@ -23,26 +24,35 @@ export default function UserProfileMenu({ userData }) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    // Clear cart from Redux store
-    dispatch(clearCart());
-    
-    // Clear auth data and cart from localStorage/cookies
-    clearAuthData();
-    
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
     setIsOpen(false);
     
-    // Trigger navbar update
-    window.dispatchEvent(new Event('storage'));
-    window.dispatchEvent(new Event('authChange'));
-    
-    console.log('[Logout] Auth events dispatched');
-    
-    // Add smooth transition delay
-    setTimeout(() => {
+    try {
+      console.log('[UserProfileMenu] Logging out...');
+      
+      // Clear cart from Redux store
+      dispatch(clearCart());
+      
+      // Call backend logout (clears HTTP-only cookies and memory cache)
+      await logout();
+      
+      // Trigger navbar update
+      window.dispatchEvent(new Event('authChange'));
+      
+      console.log('[UserProfileMenu] Logout complete, redirecting to home...');
+      
+      // Redirect to home
       router.push('/');
       router.refresh();
-    }, 150);
+    } catch (error) {
+      console.error('[UserProfileMenu] Logout error:', error);
+      // Still redirect even if backend call fails
+      router.push('/');
+      router.refresh();
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   const getInitials = () => {
