@@ -1,17 +1,3 @@
-/**
- * Axios API Client for HTTP-only Cookie Authentication
- * 
- * SECURITY MODEL:
- * - Browser automatically sends HTTP-only cookies with every request
- * - No manual Authorization header needed
- * - Tokens are inaccessible to JavaScript (XSS protection)
- * 
- * FEATURES:
- * - Automatic cookie inclusion with withCredentials
- * - Token refresh on 401 errors
- * - Re-fetches user data after refresh
- */
-
 import axios from 'axios';
 import { fetchCurrentUser, clearUserData } from './AuthService';
 
