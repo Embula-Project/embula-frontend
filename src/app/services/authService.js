@@ -8,7 +8,7 @@
  * This ensures no sensitive user data is permanently stored in localStorage
  */
 
-import { decodeJWT, getRoleFromToken, isTokenExpired } from "./jwtService";
+import { decodeJWT, getRoleFromToken, isTokenExpired } from "./JwtService";
 
 const ACCESS_TOKEN_KEY = "accessToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
@@ -197,7 +197,7 @@ export function getDashboardRoute(role) {
   
   switch (roleUpper) {
     case "CUSTOMER":
-      return "/customer";
+      return "/";
     case "ADMIN":
       return "/admin";
     case "STAFF":

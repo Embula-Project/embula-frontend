@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import HeroSection from "./Components/HeroSection";
-import DiscountSection from "./Components/DiscountSection";
-import SpecialDishesSection from "./Components/SpecialDishesSection";
-import AboutSection from "./Components/AboutSection";
-import CTASection from "./Components/CTASection";
-import Login from "./Components/mainpage/Login";
+import HeroSection from "./components/HeroSection";
+import DiscountSection from "./components/DiscountSection";
+import SpecialDishesSection from "./components/SpecialDishesSection";
+import AboutSection from "./components/AboutSection";
+import CTASection from "./components/CTASection";
+import Login from "./login/page";
 
 export default function Home() {
   const searchParams = useSearchParams();

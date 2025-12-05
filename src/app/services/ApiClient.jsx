@@ -5,8 +5,8 @@
  */
 
 import axios from 'axios';
-import { getAuthToken } from './authService';
-import { refreshAccessToken } from './tokenRefreshService';
+import { getAuthToken } from './AuthService';
+import { refreshAccessToken } from './TokenRefreshService';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MENU_API_URL || 'http://localhost:8081';
 

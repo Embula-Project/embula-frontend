@@ -2,11 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectCartItems, clearCart } from '../../../store/cartSlice';
-import { getUserData } from '../../services/authService';
-import { createCheckoutSession, prepareOrderData } from '../../services/checkoutService';
+import { selectCartItems, clearCart } from '../../store/cartSlice';
+import { getUserData } from '../services/AuthService';
+import { createCheckoutSession, prepareOrderData } from '../services/CheckoutService';
 import ErrorDialog from '../components/ErrorDialog';
-import { useErrorDialog } from '../hooks/useErrorDialog';
+import { useErrorDialog } from '../hooks/UseErrorDialog';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function CheckoutPage() {
 
     // If cart is empty, redirect to menu
     if (cartItems.length === 0) {
-      router.push('/customer/customerMenu');
+      router.push('/menu');
     }
   }, [cartItems, router]);
 
@@ -86,9 +86,9 @@ export default function CheckoutPage() {
     setPaymentUrl(null);
     setIsProcessingPayment(false);
     
-    // Redirect to customer dashboard after short delay
+    // Redirect to home page after short delay
     setTimeout(() => {
-      router.push('/customer');
+      router.push('/');
     }, 500);
   };
 

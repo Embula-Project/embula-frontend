@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { registerUser } from "../../services/UserAuthServices";
-import ErrorDialog from "../../customer/components/ErrorDialog";
-import { useErrorDialog } from "../../customer/hooks/useErrorDialog";
+import ErrorDialog from "../ErrorDialog";
+import { useErrorDialog } from "../../hooks/UseErrorDialog";
 
 export default function SignUp({ onSwitchToLogin, returnUrl, onLoginSuccess }) {
   const [formData, setFormData] = useState({

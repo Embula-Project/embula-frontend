@@ -6,9 +6,9 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, ShoppingCart, LogIn } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { selectCartCount } from '../../store/cartSlice';
-import CartPopup from '../customer/components/CartPopup';
-import UserProfileMenu from '../customer/components/UserProfileMenu';
-import { getUserData } from '../services/authService';
+import CartPopup from './CartPopUp';
+import UserProfileMenu from './UserProfileMenu';
+import { getUserData } from '../services/AuthService';
 
 const Navbar = () => {
   const pathname = usePathname();
@@ -58,7 +58,7 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Menu', href: '/customer/customerMenu' },
+    { name: 'Menu', href: '/menu' },
     { name: 'Reserve Table', href: '/Reservation' },
     { name: 'About Us', href: '#about' },
     { name: 'Contact Us', href: '#contact' }

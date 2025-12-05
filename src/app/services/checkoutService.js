@@ -3,8 +3,8 @@
  * Uses apiClient for automatic Bearer token injection
  */
 
-import apiClient from './apiClient';
-import { getUserId } from './authService';
+import apiClient from './ApiClient';
+import { getUserId } from './AuthService';
 
 const CHECKOUT_BASE_URL = '/api/v1/food-order';
 

@@ -3,7 +3,7 @@ import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
-import { selectCartItems, incrementItem, decrementItem, removeItem } from '../../../store/cartSlice';
+import { selectCartItems, incrementItem, decrementItem, removeItem } from '../../store/cartSlice';
 
 export default function CartPopup({ isOpen, onClose }) {
   const cartItems = useSelector(selectCartItems);
@@ -24,10 +24,10 @@ export default function CartPopup({ isOpen, onClose }) {
       if (!token) {
         // Not authenticated - redirect to login page
         console.log('User not authenticated, redirecting to login');
-        router.push('/?login=true&return=/customer/checkout');
+        router.push('/?login=true&return=/checkout');
       } else {
         // Authenticated - proceed to checkout
-        router.push('/customer/checkout');
+        router.push('/checkout');
       }
     }, 200);
   };

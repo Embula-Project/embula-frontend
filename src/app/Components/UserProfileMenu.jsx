@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
 import { LogOut } from 'lucide-react';
-import { clearAuthData } from '../../services/authService';
-import { clearCart } from '../../../store/cartSlice';
+import { clearAuthData } from '../services/AuthService';
+import { clearCart } from '../../store/cartSlice';
 
 export default function UserProfileMenu({ userData }) {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { decodeJwtTokenMiddleware } from "./app/services/jwtDecoderMiddleware";
+import { decodeJwtTokenMiddleware } from "./app/services/JwtDecoderMiddleware";
 
 export async function middleware(request) {
   const pathname = request.nextUrl.pathname;
@@ -18,14 +18,10 @@ export async function middleware(request) {
   // Define protected routes
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   
-  // Customer menu is public, but checkout requires auth
-  const publicCustomerRoutes = ["/customer/customerMenu"];
-  const isPublicCustomerRoute = publicCustomerRoutes.some(route => pathname.startsWith(route));
-  
-  // Protect customer dashboard and checkout - only customer menu is public
-  const isCustomerRoute = (pathname === "/customer" || pathname.startsWith("/customer/")) && !isPublicCustomerRoute;
+  // Menu and home are public, only checkout requires auth
+  const isCustomerRoute = pathname === "/checkout";
 
-  // Allow access to public routes (login, signup, home, public customer pages)
+  // Allow access to public routes (login, signup, home, menu)
   if (!isAdminRoute && !isCustomerRoute) {
     return NextResponse.next();
   }
@@ -60,7 +56,7 @@ export async function middleware(request) {
         case "ADMIN":
           return "/admin";
         case "CUSTOMER":
-          return "/customer";
+          return "/";
         default:
           return "/";
       }

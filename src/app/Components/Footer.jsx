@@ -8,7 +8,7 @@ const Footer = () => {
 
   const quickLinks = [
     { name: 'Home', href: '/' },
-    { name: 'Menu', href: '/customer/customerMenu' },
+    { name: 'Menu', href: '/menu' },
     { name: 'Reservations', href: '/Reservation' },
     { name: 'About Us', href: '#about' },
     { name: 'Contact', href: '#contact' }

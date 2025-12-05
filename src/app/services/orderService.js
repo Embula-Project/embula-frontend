@@ -3,7 +3,7 @@
  * Uses apiClient with automatic Bearer token authentication
  */
 
-import apiClient from './apiClient';
+import apiClient from './ApiClient';
 
 /**
  * Submit an order (example - requires backend endpoint)

@@ -11,7 +11,7 @@ import {
   getUserData, 
   clearAuthData,
   getAuthToken 
-} from "./authService";
+} from "./AuthService";
 
 export function useAuth() {
   const [user, setUser] = useState(null);

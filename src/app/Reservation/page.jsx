@@ -1,11 +1,11 @@
 
 'use client';
 import React, { useState, useEffect } from 'react';
-import ReservationForm from '../Components/ReservationForm';
-import DateSelector from '../Components/DateSelector';
-import TableLayout from '../Components/TableLayout';
-import CustomerDetailsModal from '../Components/CustomerDetailsModal';
-import SuccessModal from '../Components/SuccessModal';
+import ReservationForm from '../components/ReservationForm';
+import DateSelector from '../components/DateSelector';
+import TableLayout from '../components/TableLayout';
+import CustomerDetailsModal from '../components/CustomerDetailsModal';
+import SuccessModal from '../components/SuccessModal';
 import { Users, Clock, Calendar } from 'lucide-react';
 
 const ReservationPage = () => {
