@@ -65,18 +65,22 @@ export default function Login() {
         password: formData.password,
       };
   
+      console.log('[Login] Submitting credentials...');
       const response = await loginUser(credentials);
-      const dashboardRoute = handleLoginSuccess(response);
       
-      // Trigger a re-render of the navbar by dispatching a storage event
-      window.dispatchEvent(new Event('storage'));
+      console.log('[Login] Login successful, backend set HTTP-only cookies');
+      
+      // handleLoginSuccess now fetches user from /auth/me and returns route
+      const dashboardRoute = await handleLoginSuccess(response);
+      
+      console.log('[Login] Navigating to:', dashboardRoute);
       
       // Navigate to dashboard
       router.push(dashboardRoute);
       router.refresh();
       
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("[Login] Login error:", error);
       showError(error.message || "Login failed. Please check your credentials and try again.");
     } finally {
       setIsSubmitting(false);

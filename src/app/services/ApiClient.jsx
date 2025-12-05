@@ -1,40 +1,26 @@
-/**
- * Axios API Client with Auth Interceptor
- * Automatically adds Bearer token to requests
- * Handles automatic token refresh on 401 errors
- */
-
 import axios from 'axios';
-import { getAuthToken } from './AuthService';
-import { refreshAccessToken } from './TokenRefreshService';
+import { fetchCurrentUser, clearUserData } from './AuthService';
 
 const BASE_URL = process.env.NEXT_PUBLIC_MENU_API_URL || 'http://localhost:8081';
 
-// Create axios instance
+// Create axios instance with cookie support
 const apiClient = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true, // Include HTTP-only cookies in all requests
   headers: {
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 seconds
 });
 
-// Request interceptor - adds auth token to headers
+// Request interceptor - no token manipulation needed (cookies handled by browser)
 apiClient.interceptors.request.use(
   (config) => {
-    // Get access token from storage
-    const token = getAuthToken();
-    
-    if (token) {
-      // Add Bearer token to Authorization header
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('Added Bearer access token to request:', config.url);
-    }
-    
+    console.log(`[apiClient] ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
   (error) => {
-    console.error('Request interceptor error:', error);
+    console.error('[apiClient] Request error:', error);
     return Promise.reject(error);
   }
 );
@@ -51,36 +37,51 @@ apiClient.interceptors.response.use(
       const status = error.response.status;
       const message = error.response.data?.message || error.message;
       
-      console.error(`API Error [${status}]:`, message);
+      console.error(`[apiClient] Error [${status}]:`, message);
       
-      // Handle 401 Unauthorized - try to refresh token
+      // Handle 401 Unauthorized - call refresh endpoint
       if (status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
         
         try {
-          console.log('Access token expired, attempting refresh...');
-          const newAccessToken = await refreshAccessToken();
+          console.log('[apiClient] Access token expired, calling refresh...');
           
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          // Call backend refresh endpoint (uses HTTP-only refreshToken cookie)
+          await axios.post(`${BASE_URL}/api/v1/login/refresh-token`, {}, {
+            withCredentials: true,
+          });
+          
+          console.log('[apiClient] Token refreshed, re-fetching user data...');
+          
+          // Re-fetch user data with new accessToken
+          await fetchCurrentUser();
+          
+          // Retry original request (new accessToken cookie will be sent automatically)
           return apiClient(originalRequest);
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
+          console.error('[apiClient] Token refresh failed, clearing user data');
+          clearUserData();
+          
+          // Redirect to login
+          if (typeof window !== 'undefined') {
+            window.location.href = '/?login=true';
+          }
+          
           return Promise.reject(refreshError);
         }
       } else if (status === 403) {
-        console.error('Forbidden - insufficient permissions');
+        console.error('[apiClient] Forbidden - insufficient permissions');
       }
       
       // Reject with formatted error
       return Promise.reject(new Error(message));
     } else if (error.request) {
       // Request was made but no response received
-      console.error('No response received from server');
+      console.error('[apiClient] No response from server');
       return Promise.reject(new Error('Network error - please check your connection'));
     } else {
       // Something else happened
-      console.error('Request setup error:', error.message);
+      console.error('[apiClient] Request setup error:', error.message);
       return Promise.reject(error);
     }
   }

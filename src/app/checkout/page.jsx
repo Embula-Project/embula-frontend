@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCartItems, clearCart } from '../../store/cartSlice';
-import { getUserData } from '../services/AuthService';
+import { getUserData, fetchCurrentUser } from '../services/AuthService';
 import { createCheckoutSession, prepareOrderData } from '../services/CheckoutService';
 import ErrorDialog from '../components/ErrorDialog';
 import { useErrorDialog } from '../hooks/UseErrorDialog';
@@ -19,15 +19,27 @@ export default function CheckoutPage() {
   const { error, showError, clearError } = useErrorDialog();
 
   useEffect(() => {
-    // Load user data from JWT token (middleware already verified authentication)
-    const user = getUserData();
-    setUserData(user);
-    setIsLoading(false);
+    // Load user data (middleware already verified authentication)
+    const loadUserData = async () => {
+      // Check memory cache first
+      let user = getUserData();
+      
+      // If not cached, fetch from backend
+      if (!user) {
+        console.log('[Checkout] Fetching user data from /auth/me...');
+        user = await fetchCurrentUser();
+      }
+      
+      setUserData(user);
+      setIsLoading(false);
 
-    // If cart is empty, redirect to menu
-    if (cartItems.length === 0) {
-      router.push('/menu');
-    }
+      // If cart is empty, redirect to menu
+      if (cartItems.length === 0) {
+        router.push('/menu');
+      }
+    };
+
+    loadUserData();
   }, [cartItems, router]);
 
   // Show loading state only while fetching user data

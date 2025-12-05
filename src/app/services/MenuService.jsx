@@ -1,7 +1,13 @@
-const base_URL = process.env.NEXT_PUBLIC_MENU_API_URL;
+import apiClient from './ApiClient';
 
-export async function fetchMenu(page=0, size=10) {
-  const res = await fetch(`${base_URL}/api/v1/fooditem/getAllFoodItems?page=${page}&size=${size}`);
-  if (!res.ok) throw new Error('Failed to fetch menu');
-  return res.json();
+export async function fetchMenu(page =0,size=10){
+    try{
+        const response = await apiClient.get(`/api/v1/fooditem/getAllFoodItems`,{
+            params:{page,size},
+        });
+        return response.data;
+    }catch(error){
+        console.error('Failed to fetch menu:', error.message);
+        throw new Error(error.message || 'Failed to fetch menu');
+    }
 }

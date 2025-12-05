@@ -1,8 +1,3 @@
-/**
- * Checkout Service - Handles payment checkout operations
- * Uses apiClient for automatic Bearer token injection
- */
-
 import apiClient from './ApiClient';
 import { getUserId } from './AuthService';
 
