@@ -149,7 +149,7 @@ const SpecialDishesSection = () => {
 
         {/* View Full Menu Button */}
         <div className="text-center mt-12">
-          <a href="/customer/customerMenu">
+          <a href="/menu">
             <button className="group bg-gradient-to-r from-amber-600 to-amber-500 text-white px-8 py-4 rounded-full font-semibold text-lg hover:from-amber-500 hover:to-amber-400 transition-all duration-300 shadow-2xl hover:shadow-amber-500/50 hover:scale-105 inline-flex items-center gap-2">
               Explore Full Menu
               <svg 

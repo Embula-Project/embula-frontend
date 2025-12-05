@@ -97,7 +97,7 @@ const HeroSection = () => {
                   <ArrowRight className="group-hover:translate-x-1 transition-transform duration-300" size={20} />
                 </button>
               </Link>
-              <Link href="/customer/customerMenu">
+              <Link href="/menu">
                 <button className="bg-transparent border-2 border-amber-500 text-amber-400 px-8 py-4 rounded-full font-semibold text-lg hover:bg-amber-500 hover:text-white transition-all duration-300 shadow-lg">
                   View Our Menu
                 </button>

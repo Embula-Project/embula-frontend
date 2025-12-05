@@ -4,4 +4,4 @@ export { default as SuccessDialog } from './SuccessDialog';
 export { default as CustomDialog } from './CustomDialog';
 
 // Hooks
-export { useErrorDialog } from '../hooks/useErrorDialog';
+export { useErrorDialog } from '../hooks/UseErrorDialog';

@@ -1,10 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { fetchMenu } from "../services/menuService";
+import { fetchMenu } from "../services/MenuService";
 import { useDispatch } from "react-redux";
-import { addItem } from "../../../store/cartSlice";
+import { addItem } from "../../store/cartSlice";
 import ErrorDialog from "./ErrorDialog";
-import { useErrorDialog } from "../hooks/useErrorDialog";
+import { useErrorDialog } from "../hooks/UseErrorDialog";
 
 function buildImageSrc(imageType, imageData) {
   if (!imageData || !imageType || !imageType.startsWith("image/")) return null;
