@@ -16,7 +16,8 @@ const initialState = {
 };
 
 function getId(item) {
-  return item?.itemId ?? item?.id ?? item?.foodItemId ?? item?.itemName ?? item?.imageName ?? Math.random().toString(36).slice(2);
+  // Prioritize itemId from backend, then other possible ID fields
+  return item?.itemId ?? item?.foodItemId ?? item?.id ?? item?.itemName ?? item?.imageName ?? Math.random().toString(36).slice(2);
 }
 
 const cartSlice = createSlice({
@@ -25,18 +26,36 @@ const cartSlice = createSlice({
   reducers: {
     addItem: (state, action) => {
       const raw = action.payload;
+      console.log('[CartSlice] Adding item to cart:', raw);
+      
       const id = getId(raw);
       const existing = state.items.find((it) => it.id === id);
       if (existing) {
         existing.qty = (existing.qty || 0) + 1;
+        console.log('[CartSlice] Incremented existing item qty:', existing);
       } else {
-        state.items.push({
+        // Extract numeric foodItemId - try multiple possible fields
+        let foodItemId = null;
+        if (typeof raw.itemId === 'number') {
+          foodItemId = raw.itemId;
+        } else if (typeof raw.foodItemId === 'number') {
+          foodItemId = raw.foodItemId;
+        } else if (typeof raw.id === 'number') {
+          foodItemId = raw.id;
+        }
+        
+        const newItem = {
           id,
+          foodItemId: foodItemId,
           name: raw.itemName ?? raw.name ?? "Item",
           price: Number(raw.price) || 0,
-          imageSrc: raw.imageSrc ?? null,
+          imageType: raw.imageType || null,
+          imageData: raw.imageData || null,
           qty: 1,
-        });
+        };
+        
+        console.log('[CartSlice] Created new cart item:', newItem);
+        state.items.push(newItem);
       }
     },
     incrementItem: (state, action) => {

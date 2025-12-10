@@ -16,6 +16,7 @@ export default function CheckoutPage() {
   const [userData, setUserData] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
+  const [orderType, setOrderType] = useState('DineIn'); // DINE_IN, TAKE_AWAY, DELIVERY
   const { error, showError, clearError } = useErrorDialog();
 
   useEffect(() => {
@@ -57,12 +58,14 @@ export default function CheckoutPage() {
   // Middleware ensures user is authenticated and has CUSTOMER role
   // Show checkout page
   const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
+  const deliveryFee = orderType === 'DELIVERY' ? 200.00 : 0;
+  const totalAmount = totalPrice + deliveryFee;
 
   const handlePlaceOrder = async () => {
     setIsProcessingPayment(true);
     try {
-      // Prepare order data from cart items
-      const orderData = prepareOrderData(cartItems);
+      // Prepare order data from cart items with selected order type
+      const orderData = prepareOrderData(cartItems, orderType);
       
       console.log('Placing order with data:', orderData);
       
@@ -199,8 +202,8 @@ export default function CheckoutPage() {
                   {cartItems.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 bg-black/50 border border-amber-900/20 rounded-lg">
                       <div className="w-20 h-20 flex-shrink-0 rounded-md overflow-hidden bg-gray-800">
-                        {item.imageSrc ? (
-                          <img src={item.imageSrc} alt={item.name} className="w-full h-full object-cover" />
+                        {item.imageType && item.imageData ? (
+                          <img src={`data:${item.imageType};base64,${item.imageData}`} alt={item.name} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-500 text-xs">No image</div>
                         )}
@@ -215,24 +218,99 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Delivery Details */}
+              {/* Order Type Selection */}
+              <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-900/30 rounded-xl p-6 mb-8">
+                <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                  <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  Order Type
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Dine In */}
+                  <button
+                    onClick={() => setOrderType('DINE_IN')}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 ${
+                      orderType === 'DINE_IN'
+                        ? 'border-amber-500 bg-amber-500/20'
+                        : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className={`w-8 h-8 ${
+                        orderType === 'DINE_IN' ? 'text-amber-400' : 'text-gray-400'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                      </svg>
+                      <span className={`font-semibold ${
+                        orderType === 'DINE_IN' ? 'text-amber-400' : 'text-gray-300'
+                      }`}>Dine In</span>
+                    </div>
+                  </button>
+
+                  {/* Take Away */}
+                  <button
+                    onClick={() => setOrderType('TakeAway')}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 ${
+                      orderType === 'TAKE_AWAY'
+                        ? 'border-amber-500 bg-amber-500/20'
+                        : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className={`w-8 h-8 ${
+                        orderType === 'TAKE_AWAY' ? 'text-amber-400' : 'text-gray-400'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      <span className={`font-semibold ${
+                        orderType === 'TAKE_AWAY' ? 'text-amber-400' : 'text-gray-300'
+                      }`}>Take Away</span>
+                    </div>
+                  </button>
+
+                  {/* Delivery */}
+                  <button
+                    onClick={() => setOrderType('DELIVERY')}
+                    className={`p-4 rounded-lg border-2 transition-all duration-300 ${
+                      orderType === 'DELIVERY'
+                        ? 'border-amber-500 bg-amber-500/20'
+                        : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
+                    }`}
+                  >
+                    <div className="flex flex-col items-center gap-2">
+                      <svg className={`w-8 h-8 ${
+                        orderType === 'DELIVERY' ? 'text-amber-400' : 'text-gray-400'
+                      }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                      </svg>
+                      <span className={`font-semibold ${
+                        orderType === 'DELIVERY' ? 'text-amber-400' : 'text-gray-300'
+                      }`}>Delivery</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Customer Details */}
               <div className="bg-gradient-to-br from-black to-gray-900 border border-amber-900/30 rounded-xl p-6">
                 <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
                   <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  Delivery Details
+                  {orderType === 'DELIVERY' ? 'Delivery Details' : 'Customer Details'}
                 </h2>
                 <div className="space-y-4">
                   <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
                     <p className="text-gray-400 text-sm mb-1">Name</p>
                     <p className="text-white font-semibold">{userData?.firstName} {userData?.lastName}</p>
                   </div>
-                  <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
-                    <p className="text-gray-400 text-sm mb-1">Delivery Address</p>
-                    <p className="text-white font-semibold">{userData?.address || 'Not provided'}</p>
-                  </div>
+                  {orderType === 'DELIVERY' && (
+                    <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
+                      <p className="text-gray-400 text-sm mb-1">Delivery Address</p>
+                      <p className="text-white font-semibold">{userData?.address || 'Not provided'}</p>
+                    </div>
+                  )}
                   <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
                     <p className="text-gray-400 text-sm mb-1">Phone Number</p>
                     <p className="text-white font-semibold">{userData?.phoneNumber || 'Not provided'}</p>
@@ -251,13 +329,15 @@ export default function CheckoutPage() {
                     <span>Subtotal</span>
                     <span>{totalPrice.toFixed(2)} LKR</span>
                   </div>
-                  <div className="flex justify-between text-gray-300">
-                    <span>Delivery Fee</span>
-                    <span>200.00 LKR</span>
-                  </div>
+                  {orderType === 'DELIVERY' && (
+                    <div className="flex justify-between text-gray-300">
+                      <span>Delivery Fee</span>
+                      <span>{deliveryFee.toFixed(2)} LKR</span>
+                    </div>
+                  )}
                   <div className="border-t border-amber-900/30 pt-4 flex justify-between text-xl font-bold text-amber-400">
                     <span>Total</span>
-                    <span>{(totalPrice + 200).toFixed(2)} LKR</span>
+                    <span>{totalAmount.toFixed(2)} LKR</span>
                   </div>
                 </div>
 
