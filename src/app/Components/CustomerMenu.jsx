@@ -156,7 +156,7 @@ export default function CustomerMenu() {
                   {/* Add to Cart Button */}
                   <button
                     type="button"
-                    onClick={() => dispatch(addItem({ ...item, imageSrc }))}
+                    onClick={() => dispatch(addItem(item))}
                     className="w-full bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white px-6 py-3 rounded-full text-sm font-semibold transition-all duration-300 shadow-lg hover:shadow-amber-500/50 hover:scale-105 flex items-center justify-center gap-2"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

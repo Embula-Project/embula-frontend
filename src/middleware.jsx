@@ -27,7 +27,7 @@ export async function middleware(request) {
 
   // Define protected routes
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
-  const isCustomerRoute = pathname === "/checkout"; // Only checkout requires auth
+  const isCustomerRoute = pathname === "/checkout" || pathname === "/payment-success" || pathname === "/success"; // Auth required routes
 
   // Allow access to public routes (login, signup, home, menu)
   if (!isAdminRoute && !isCustomerRoute) {

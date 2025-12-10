@@ -97,6 +97,10 @@ export function getUserId() {
   return currentUser?.id || null;
 }
 
+export function getUserEmail(){
+  return currentUser?.email || null;
+}
+
 /**
  * Get user role from cached user data
  * @returns {string|null} User role or null

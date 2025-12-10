@@ -81,9 +81,9 @@ export default function CartPopup({ isOpen, onClose }) {
                 <div className="flex gap-4">
                   {/* Image */}
                   <div className="w-20 h-20 flex-shrink-0 rounded-lg overflow-hidden bg-gray-800 border border-amber-900/40 shadow-md">
-                    {item.imageSrc ? (
+                    {item.imageType && item.imageData ? (
                       <img
-                        src={item.imageSrc}
+                        src={`data:${item.imageType};base64,${item.imageData}`}
                         alt={item.name}
                         className="w-full h-full object-cover"
                       />
