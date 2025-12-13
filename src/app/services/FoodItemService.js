@@ -62,11 +62,30 @@ export const addFoodItem = async (foodItemData, imageFile) => {
  * Update an existing food item
  * @param {string|number} itemId - Food item ID
  * @param {Object} foodItemData - Updated food item details
+ * @param {File} imageFile - Image file (optional)
  * @returns {Promise} Promise resolving to updated food item
  */
-export const updateFoodItem = async (itemId, foodItemData) => {
+export const updateFoodItem = async (itemId, foodItemData, imageFile) => {
   try {
-    const response = await apiClient.put(`/api/v1/fooditem/${itemId}`, foodItemData);
+    const formData = new FormData();
+    
+    // Add the food item update DTO as a JSON blob
+    const foodItemBlob = new Blob([JSON.stringify(foodItemData)], {
+      type: 'application/json'
+    });
+    formData.append('foodItemUpdateDTO', foodItemBlob);
+    
+    // Add the image file if provided
+    if (imageFile) {
+      formData.append('imageFile', imageFile);
+    }
+    
+    const response = await apiClient.put(`/api/v1/fooditem/${itemId}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
     console.log('Food item updated successfully:', response.data);
     return response.data;
   } catch (error) {

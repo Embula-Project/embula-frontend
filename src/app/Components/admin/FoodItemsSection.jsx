@@ -169,7 +169,7 @@ export default function FoodItemsSection() {
       if (editingItem) {
         // Update existing item
         itemData.image = formData.image;
-        await updateFoodItem(editingItem.itemId, itemData);
+        await updateFoodItem(editingItem.itemId, itemData, imageFile);
       } else {
         // Add new item
         if (!imageFile) {
