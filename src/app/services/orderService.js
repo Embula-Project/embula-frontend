@@ -76,3 +76,42 @@ export async function cancelOrder(orderId) {
   }
 }
 
+/**
+ * Get all orders with pagination (Admin)
+ * @param {number} page - Page number (0-indexed)
+ * @param {number} size - Page size
+ * @returns {Promise<Object>} Paginated orders response
+ */
+export async function getAllOrders(page = 0, size = 10) {
+  try {
+    const response = await apiClient.get('/api/v1/order', {
+      params: { page, size }
+    });
+    
+    console.log('Fetched all orders:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch all orders:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Update order status (Admin)
+ * @param {string|number} orderId - Order ID
+ * @param {string} orderStatus - New status (Pending, Completed, Cancelled)
+ * @returns {Promise<Object>} Update response
+ */
+export async function updateOrderStatus(orderId, orderStatus) {
+  try {
+    const response = await apiClient.put('/api/v1/order', null, {
+      params: { orderId, orderStatus }
+    });
+    
+    console.log('Order status updated successfully:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to update order status:', error.message);
+    throw error;
+  }
+}

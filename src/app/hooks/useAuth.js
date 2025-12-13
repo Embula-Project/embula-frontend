@@ -24,14 +24,20 @@ export function useAuth() {
         // Check memory cache first
         let userData = getUserData();
         
-        // If not cached (page refresh), ALWAYS try fetching from backend
-        // The backend will verify HTTP-only cookie and return user data
-        if (!userData) {
-          console.log('[useAuth] User not cached (page refresh), fetching from /auth/me...');
-          userData = await fetchCurrentUser();
-        } else {
+        // If cached, use it immediately for faster rendering
+        if (userData) {
           console.log('[useAuth] User already cached:', userData.email);
+          if (mounted) {
+            setUser(userData);
+            setIsAuthenticated(true);
+            setIsLoading(false);
+          }
+          return;
         }
+        
+        // If not cached (page refresh), try fetching from backend
+        console.log('[useAuth] User not cached, fetching from /auth/me...');
+        userData = await fetchCurrentUser();
         
         if (mounted) {
           setUser(userData);
@@ -58,6 +64,7 @@ export function useAuth() {
       if (mounted) {
         setUser(userData);
         setIsAuthenticated(!!userData);
+        setIsLoading(false);
       }
     };
 
