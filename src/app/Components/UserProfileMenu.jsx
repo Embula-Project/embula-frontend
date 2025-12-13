@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
+import Link from 'next/link';
 import { LogOut } from 'lucide-react';
 import { logout } from '../services/AuthService';
 import { clearCart } from '../../store/cartSlice';
@@ -97,6 +98,29 @@ export default function UserProfileMenu({ userData }) {
 
           {/* Menu Items */}
           <div className="p-2">
+            {/* Admin Dashboard Link - Only for Admin users */}
+            {userData?.role === 'ADMIN' && (
+              <>
+                <Link
+                  href="/admin"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-amber-900/20 rounded-lg transition-all group"
+                >
+                  <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center group-hover:bg-amber-500/20 transition-all">
+                    <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-white font-medium text-sm">Admin Dashboard</p>
+                    <p className="text-gray-400 text-xs">Manage your restaurant</p>
+                  </div>
+                </Link>
+                <div className="border-t border-amber-900/30 my-2"></div>
+              </>
+            )}
+
+            {/* Customer Info - Only for Customer users */}
             {userData?.role === 'CUSTOMER' && (
               <>
                 <div className="px-4 py-3 hover:bg-amber-900/20 rounded-lg transition-colors">
@@ -111,12 +135,21 @@ export default function UserProfileMenu({ userData }) {
               </>
             )}
 
+            {/* Logout Button - For all users */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/20 rounded-lg transition-colors text-left"
+              disabled={isLoggingOut}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-900/20 rounded-lg transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <LogOut size={18} className="text-red-400" />
-              <span className="text-red-400 text-sm font-semibold">Logout</span>
+              <div className="w-10 h-10 bg-red-500/10 rounded-lg flex items-center justify-center group-hover:bg-red-500/20 transition-all">
+                <LogOut size={20} className="text-red-400" />
+              </div>
+              <div>
+                <p className="text-white font-medium text-sm">
+                  {isLoggingOut ? 'Logging out...' : 'Logout'}
+                </p>
+                <p className="text-gray-400 text-xs">Sign out of your account</p>
+              </div>
             </button>
           </div>
         </div>

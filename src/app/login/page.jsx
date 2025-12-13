@@ -75,16 +75,18 @@ export default function Login() {
       
       console.log('[Login] Navigating to:', dashboardRoute);
       
+      // Small delay to ensure state is fully propagated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Navigate to dashboard
       router.push(dashboardRoute);
-      router.refresh();
       
     } catch (error) {
       console.error("[Login] Login error:", error);
       showError(error.message || "Login failed. Please check your credentials and try again.");
-    } finally {
       setIsSubmitting(false);
     }
+    // Don't set isSubmitting to false on success - let the redirect happen
   };
 
   return (

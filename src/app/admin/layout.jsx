@@ -22,7 +22,6 @@ export default function AdminLayout({ children }) {
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black min-h-screen`}>
         <Providers>
-          {/* No Navbar, Footer, or Chatbot for admin */}
           <main className="min-h-screen">{children}</main>
         </Providers>
       </body>
