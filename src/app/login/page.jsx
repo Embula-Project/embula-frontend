@@ -1,10 +1,10 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import SignUp from "../components/mainpage/SignUp";
+import SignUp from "../Components/mainpage/SignUp";
 import { loginUser } from "../services/UserAuthServices";
 import { handleLoginSuccess } from "../services/AuthService";
-import ErrorDialog from "../components/ErrorDialog";
+import ErrorDialog from "../Components/ErrorDialog";
 import { useErrorDialog } from "../hooks/UseErrorDialog";
 
 export default function Login() {

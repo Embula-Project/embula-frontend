@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
-import PageTransition from "./components/PageTransition";
+import PageTransition from "./Components/PageTransition";
 import CartMigrationHandler from "./Components/CartMigrationHandler";
 import LayoutWrapper from "./Components/LayoutWrapper";
 

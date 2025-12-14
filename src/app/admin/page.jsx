@@ -3,11 +3,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 import AdminHeader from '../Components/AdminHeader';
-import OrdersSection from '../components/admin/OrdersSection';
-import FoodItemsSection from '../components/admin/FoodItemsSection';
-import PaymentsSection from '../components/admin/PaymentsSection';
-import EarningsSection from '../components/admin/EarningsSection';
-import UserManagementSection from '../components/admin/UserManagementSection';
+import OrdersSection from '../Components/admin/OrdersSection';
+import FoodItemsSection from '../Components/admin/FoodItemsSection';
+import PaymentsSection from '../Components/admin/PaymentsSection';
+import EarningsSection from '../Components/admin/EarningsSection';
+import UserManagementSection from '../Components/admin/UserManagementSection';
 
 export default function AdminPage() {
   const [activeSection, setActiveSection] = useState('orders');
