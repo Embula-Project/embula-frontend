@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import HeroSection from "./components/HeroSection";
 import DiscountSection from "./components/DiscountSection";
@@ -8,7 +8,7 @@ import AboutSection from "./components/AboutSection";
 import CTASection from "./components/CTASection";
 import Login from "./login/page";
 
-export default function Home() {
+function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   
@@ -51,5 +51,17 @@ export default function Home() {
       <AboutSection />
       <CTASection />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="bg-black min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500"></div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
