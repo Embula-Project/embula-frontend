@@ -79,11 +79,6 @@ export default function CustomerMenu() {
       {/* Hero Section */}
       <div className="pt-32 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-amber-900/30 backdrop-blur-sm border border-amber-500/30 rounded-full px-4 py-2 mb-6">
-            <span className="text-amber-400 text-2xl">🍽️</span>
-            <span className="text-amber-300 text-sm font-medium">Curated with Excellence</span>
-          </div>
-          
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
             Our
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600 mt-2">

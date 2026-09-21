@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { getAllOrders, updateOrderStatus } from '@/app/services/OrderService';
+import { getAllOrders, updateOrderStatus } from '@/app/services/orderService';
 
 export default function OrdersSection() {
   const [orders, setOrders] = useState([]);
