@@ -69,13 +69,6 @@ const HeroSection = () => {
 
           {/* Right Side - Content (more space) */}
           <div className="lg:col-span-8 text-center lg:text-left">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-amber-900/30 backdrop-blur-sm border border-amber-500/30 rounded-full px-4 py-2 mb-6 animate-pulse">
-              <Sparkles className="text-amber-400" size={16} />
-              <span className="text-amber-300 text-sm font-medium">Finest Dining Experience</span>
-            </div>
-
-            {/* Main Heading */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 leading-tight">
               Welcome to
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-amber-600 mt-2">
