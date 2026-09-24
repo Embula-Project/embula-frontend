@@ -11,7 +11,7 @@ const Footer = () => {
     { name: 'Menu', href: '/menu' },
     { name: 'Reservations', href: '/Reservation' },
     { name: 'About Us', href: '/aboutus' },
-    { name: 'Contact', href: '#contact' }
+    { name: 'Contact', href: '/contactus' }
   ];
 
   const openingHours = [
