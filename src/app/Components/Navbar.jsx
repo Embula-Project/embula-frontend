@@ -34,7 +34,7 @@ const Navbar = () => {
     { name: 'Menu', href: '/menu' },
     { name: 'Reserve Table', href: '/Reservation' },
     { name: 'About Us', href: '/aboutus' },
-    { name: 'Contact Us', href: '#contact' }
+    { name: 'Contact Us', href: '/contactus' }
   ];
 
   return (

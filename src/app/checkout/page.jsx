@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectCartItems, clearCart } from '../../store/cartSlice';
 import { getUserData, fetchCurrentUser } from '../services/AuthService';
-import { createCheckoutSession, prepareOrderData } from '../services/CheckoutService';
+import { createCheckoutSession, prepareOrderData } from '../services/checkoutService';
 import ErrorDialog from '../Components/ErrorDialog';
 import { useErrorDialog } from '../hooks/UseErrorDialog';
 
