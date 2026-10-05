@@ -4,19 +4,24 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ShoppingCart, LogIn } from 'lucide-react';
-import { useSelector } from 'react-redux';
-import { selectCartCount } from '../../store/cartSlice';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectCartCount, clearCart } from '../../store/cartSlice';
 import CartPopup from './CartPopUp';
 import UserProfileMenu from './UserProfileMenu';
+import ErrorDialog from './ErrorDialog';
+import { useErrorDialog } from '../hooks/UseErrorDialog';
 import { useAuth } from '../hooks/useAuth';
+import { consumeLastOrderFailed, consumeLastOrderSucceeded } from '../services/checkoutService';
 
 const Navbar = () => {
   const pathname = usePathname();
+  const dispatch = useDispatch();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const cartCount = useSelector(selectCartCount);
-  
+  const { error: orderError, showError: showOrderError, clearError: clearOrderError } = useErrorDialog();
+
   // Use auth hook for centralized authentication state
   const { user: userData, isAuthenticated, isLoading } = useAuth();
 
@@ -29,6 +34,41 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Checkout opens Stripe in a separate browser tab, and this tab is sent
+    // back here well before the user finishes paying there — so the outcome
+    // (success/failure) usually isn't known yet at that point. The Stripe tab
+    // sets a flag in localStorage once it reaches /success or /cancel; poll
+    // for it here (Navbar is mounted on every page) so the cart clears — and
+    // a failure notice shows — as soon as the outcome lands, no matter which
+    // page the user is on.
+    const checkOrderOutcome = () => {
+      if (consumeLastOrderSucceeded()) {
+        dispatch(clearCart());
+        return;
+      }
+      const failureMessage = consumeLastOrderFailed();
+      if (failureMessage) {
+        dispatch(clearCart());
+        showOrderError(failureMessage);
+      }
+    };
+
+    checkOrderOutcome();
+
+    const handleFocus = () => checkOrderOutcome();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('storage', handleFocus);
+    const intervalId = setInterval(checkOrderOutcome, 3000);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('storage', handleFocus);
+      clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const navLinks = [
     { name: 'Home', href: '/' },
     { name: 'Menu', href: '/menu' },
@@ -39,6 +79,13 @@ const Navbar = () => {
 
   return (
     <>
+      <ErrorDialog
+        open={!!orderError}
+        onClose={clearOrderError}
+        message={orderError}
+        title="Order Failed"
+      />
+
       {/* Main Navbar */}
       <nav
         className={`fixed w-full z-50 transition-all duration-300 ${
