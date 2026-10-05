@@ -11,7 +11,7 @@ import Login from "./login/page";
 function HomeContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
+
   // Initialize state immediately from search params to prevent flicker
   const loginParam = searchParams.get('login');
   const returnParam = searchParams.get('return') || searchParams.get('redirect');
@@ -22,7 +22,7 @@ function HomeContent() {
     // Sync state with URL changes
     const newLoginParam = searchParams.get('login');
     const newReturnParam = searchParams.get('return') || searchParams.get('redirect');
-    
+
     setShowLogin(newLoginParam === 'true');
     setReturnUrl(newReturnParam);
   }, [searchParams]);

@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { verifyPaymentSuccess } from '../services/CheckoutService';
+import { verifyPaymentSuccess, clearPendingCart, markLastOrderFailed, markLastOrderSucceeded } from '../services/checkoutService';
 
 function PaymentSuccessContent() {
   const router = useRouter();
@@ -24,18 +24,24 @@ function PaymentSuccessContent() {
       try {
         console.log('[PaymentSuccess] Verifying payment for session:', sessionId);
         const response = await verifyPaymentSuccess(sessionId);
-        
+
         if (response.code === 200) {
           setStatus('success');
           setOrderDetails(response.data);
+          clearPendingCart();
+          markLastOrderSucceeded();
         } else {
           setStatus('error');
           setErrorMessage(response.message || 'Payment verification failed');
+          markLastOrderFailed(response.message || 'Your last order could not be completed.');
+          clearPendingCart();
         }
       } catch (error) {
         console.error('[PaymentSuccess] Verification error:', error);
         setStatus('error');
         setErrorMessage(error.message || 'Failed to verify payment');
+        markLastOrderFailed(error.message || 'Your last order could not be completed.');
+        clearPendingCart();
       }
     };
 

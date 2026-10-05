@@ -1,23 +1,83 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectCartItems, clearCart } from '../../store/cartSlice';
+import { useSelector } from 'react-redux';
+import dayjs from 'dayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { selectCartItems } from '../../store/cartSlice';
 import { getUserData, fetchCurrentUser } from '../services/AuthService';
 import { createCheckoutSession, prepareOrderData } from '../services/checkoutService';
+import { getCustomerById } from '../services/CustomerService';
 import ErrorDialog from '../Components/ErrorDialog';
 import { useErrorDialog } from '../hooks/UseErrorDialog';
 
+// Dark-theme styling to match the rest of the checkout page
+const datePickerSx = {
+  width: '100%',
+  '& .MuiOutlinedInput-root': {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    color: '#ffffff',
+    '& fieldset': { borderColor: 'rgba(180, 83, 9, 0.2)' },
+    '&:hover fieldset': { borderColor: 'rgba(245, 158, 11, 0.5)' },
+    '&.Mui-focused fieldset': { borderColor: '#f59e0b' },
+  },
+  '& .MuiInputLabel-root': { color: '#9ca3af' },
+  '& .MuiInputLabel-root.Mui-focused': { color: '#f59e0b' },
+  '& .MuiSvgIcon-root': { color: '#9ca3af' },
+};
+
+// Dark-theme styling for the calendar/clock popup panel
+const datePickerSlotProps = {
+  textField: { fullWidth: true },
+  popper: {
+    sx: {
+      '& .MuiPaper-root': {
+        backgroundColor: '#18181b',
+        color: '#ffffff',
+        border: '1px solid rgba(180, 83, 9, 0.3)',
+      },
+      '& .MuiPickersDay-root': {
+        color: '#e5e7eb',
+        '&:hover': { backgroundColor: 'rgba(245, 158, 11, 0.2)' },
+      },
+      '& .MuiPickersDay-root.Mui-selected': {
+        backgroundColor: '#f59e0b',
+        color: '#000000',
+        '&:hover': { backgroundColor: '#d97706' },
+      },
+      '& .MuiPickersDay-root.Mui-disabled': { color: '#4b5563' },
+      '& .MuiDayCalendar-weekDayLabel': { color: '#9ca3af' },
+      '& .MuiPickersCalendarHeader-label': { color: '#ffffff' },
+      '& .MuiPickersCalendarHeader-switchViewIcon': { color: '#9ca3af' },
+      '& .MuiIconButton-root': { color: '#9ca3af' },
+      '& .MuiPickersYear-yearButton.Mui-selected': { backgroundColor: '#f59e0b', color: '#000000' },
+      '& .MuiClock-clock': { backgroundColor: '#27272a' },
+      '& .MuiClockPointer-root, & .MuiClockPointer-thumb': { backgroundColor: '#f59e0b', borderColor: '#f59e0b' },
+      '& .MuiClock-pin': { backgroundColor: '#f59e0b' },
+      '& .MuiClockNumber-root.Mui-selected': { backgroundColor: '#f59e0b', color: '#000000' },
+    },
+  },
+};
+
 export default function CheckoutPage() {
   const router = useRouter();
-  const dispatch = useDispatch();
   const cartItems = useSelector(selectCartItems);
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
-  const [orderType, setOrderType] = useState('DineIn'); // DINE_IN, TAKE_AWAY, DELIVERY
+  const [orderType, setOrderType] = useState('DineIn'); // DineIn, TakeAway, Delivery
+  const [scheduledDate, setScheduledDate] = useState(null); // dayjs object
+  const [scheduledTime, setScheduledTime] = useState(null); // dayjs object
+  const [deliveryAddress, setDeliveryAddress] = useState('');
+  const [deliveryPhone, setDeliveryPhone] = useState('');
   const { error, showError, clearError } = useErrorDialog();
+
+  // Earliest selectable date is today
+  const today = dayjs().startOf('day');
 
   useEffect(() => {
     // Load user data (middleware already verified authentication)
@@ -32,6 +92,19 @@ export default function CheckoutPage() {
       }
       
       setUserData(user);
+
+      // Pre-fill delivery details from the customer's saved profile (editable,
+      // order-specific only — never written back to the customer's profile).
+      if (user?.id) {
+        try {
+          const customer = await getCustomerById(user.id);
+          setDeliveryAddress(customer?.address || '');
+          setDeliveryPhone(customer?.phone || '');
+        } catch (err) {
+          console.warn('[Checkout] Could not load customer profile for delivery pre-fill:', err.message);
+        }
+      }
+
       setIsLoading(false);
 
       // If cart is empty, redirect to menu
@@ -58,20 +131,52 @@ export default function CheckoutPage() {
   // Middleware ensures user is authenticated and has CUSTOMER role
   // Show checkout page
   const totalPrice = cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.qty || 0), 0);
-  const deliveryFee = orderType === 'DELIVERY' ? 200.00 : 0;
+  const deliveryFee = orderType === 'Delivery' ? 200.00 : 0;
   const totalAmount = totalPrice + deliveryFee;
 
+  const validateOrderDetails = () => {
+    if (orderType === 'DineIn' || orderType === 'TakeAway') {
+      if (!scheduledDate || !scheduledDate.isValid() || !scheduledTime || !scheduledTime.isValid()) {
+        return `Please select a date and time to ${orderType === 'DineIn' ? 'reserve your table' : 'collect your order'}.`;
+      }
+      if (scheduledDate.isBefore(today, 'day')) {
+        return 'Please select a date that is today or later.';
+      }
+    }
+    if (orderType === 'Delivery') {
+      if (!deliveryAddress.trim() || !deliveryPhone.trim()) {
+        return 'Please provide a delivery address and phone number.';
+      }
+    }
+    return null;
+  };
+
   const handlePlaceOrder = async () => {
+    const validationError = validateOrderDetails();
+    if (validationError) {
+      showError(validationError);
+      return;
+    }
+
     setIsProcessingPayment(true);
     try {
       // Prepare order data from cart items with selected order type
       const orderData = prepareOrderData(cartItems, orderType);
-      
+
+      if (orderType === 'DineIn' || orderType === 'TakeAway') {
+        orderData.scheduledDate = scheduledDate.format('YYYY-MM-DD');
+        orderData.scheduledTime = scheduledTime.format('HH:mm');
+      }
+      if (orderType === 'Delivery') {
+        orderData.deliveryAddress = deliveryAddress.trim();
+        orderData.deliveryPhone = deliveryPhone.trim();
+      }
+
       console.log('Placing order with data:', orderData);
-      
+
       // Create checkout session
       const session = await createCheckoutSession(orderData);
-      
+
       if (session.sessionUrl) {
         // Show confirmation dialog before redirect
         setPaymentUrl(session.sessionUrl);
@@ -86,21 +191,19 @@ export default function CheckoutPage() {
   };
 
   const handleConfirmRedirect = () => {
-    // Clear cart from Redux store
-    dispatch(clearCart());
-    
-    // Clear cart from localStorage
-    localStorage.removeItem('cartItems');
-    
-    console.log('[Checkout] Cart cleared, redirecting to payment');
-    
+    // Note: the cart is intentionally kept until the payment outcome is known.
+    // Stripe opens in a new tab; that tab's /success or /cancel page clears
+    // the cart (on confirmed success) or clears it with a failure notice
+    // (on cancellation/failure) via the shared 'cartItems' localStorage key.
+    console.log('[Checkout] Redirecting to payment, cart kept pending outcome');
+
     // Open Stripe payment page in new tab
     window.open(paymentUrl, '_blank');
-    
+
     // Reset state and redirect to customer dashboard
     setPaymentUrl(null);
     setIsProcessingPayment(false);
-    
+
     // Redirect to home page after short delay
     setTimeout(() => {
       router.push('/');
@@ -229,21 +332,21 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Dine In */}
                   <button
-                    onClick={() => setOrderType('DINE_IN')}
+                    onClick={() => setOrderType('DineIn')}
                     className={`p-4 rounded-lg border-2 transition-all duration-300 ${
-                      orderType === 'DINE_IN'
+                      orderType === 'DineIn'
                         ? 'border-amber-500 bg-amber-500/20'
                         : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
                       <svg className={`w-8 h-8 ${
-                        orderType === 'DINE_IN' ? 'text-amber-400' : 'text-gray-400'
+                        orderType === 'DineIn' ? 'text-amber-400' : 'text-gray-400'
                       }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                       </svg>
                       <span className={`font-semibold ${
-                        orderType === 'DINE_IN' ? 'text-amber-400' : 'text-gray-300'
+                        orderType === 'DineIn' ? 'text-amber-400' : 'text-gray-300'
                       }`}>Dine In</span>
                     </div>
                   </button>
@@ -252,44 +355,67 @@ export default function CheckoutPage() {
                   <button
                     onClick={() => setOrderType('TakeAway')}
                     className={`p-4 rounded-lg border-2 transition-all duration-300 ${
-                      orderType === 'TAKE_AWAY'
+                      orderType === 'TakeAway'
                         ? 'border-amber-500 bg-amber-500/20'
                         : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
                       <svg className={`w-8 h-8 ${
-                        orderType === 'TAKE_AWAY' ? 'text-amber-400' : 'text-gray-400'
+                        orderType === 'TakeAway' ? 'text-amber-400' : 'text-gray-400'
                       }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                       </svg>
                       <span className={`font-semibold ${
-                        orderType === 'TAKE_AWAY' ? 'text-amber-400' : 'text-gray-300'
+                        orderType === 'TakeAway' ? 'text-amber-400' : 'text-gray-300'
                       }`}>Take Away</span>
                     </div>
                   </button>
 
                   {/* Delivery */}
                   <button
-                    onClick={() => setOrderType('DELIVERY')}
+                    onClick={() => setOrderType('Delivery')}
                     className={`p-4 rounded-lg border-2 transition-all duration-300 ${
-                      orderType === 'DELIVERY'
+                      orderType === 'Delivery'
                         ? 'border-amber-500 bg-amber-500/20'
                         : 'border-gray-700 bg-black/50 hover:border-amber-500/50'
                     }`}
                   >
                     <div className="flex flex-col items-center gap-2">
                       <svg className={`w-8 h-8 ${
-                        orderType === 'DELIVERY' ? 'text-amber-400' : 'text-gray-400'
+                        orderType === 'Delivery' ? 'text-amber-400' : 'text-gray-400'
                       }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                       </svg>
                       <span className={`font-semibold ${
-                        orderType === 'DELIVERY' ? 'text-amber-400' : 'text-gray-300'
+                        orderType === 'Delivery' ? 'text-amber-400' : 'text-gray-300'
                       }`}>Delivery</span>
                     </div>
                   </button>
                 </div>
+
+                {/* Dine In / Take Away scheduling */}
+                {(orderType === 'DineIn' || orderType === 'TakeAway') && (
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <DatePicker
+                        label={orderType === 'DineIn' ? 'Reservation Date' : 'Pickup Date'}
+                        value={scheduledDate}
+                        onChange={(newValue) => setScheduledDate(newValue)}
+                        minDate={today}
+                        sx={datePickerSx}
+                        slotProps={datePickerSlotProps}
+                      />
+                      <TimePicker
+                        label={orderType === 'DineIn' ? 'Reservation Time' : 'Pickup Time'}
+                        value={scheduledTime}
+                        onChange={(newValue) => setScheduledTime(newValue)}
+                        sx={datePickerSx}
+                        slotProps={datePickerSlotProps}
+                      />
+                    </div>
+                  </LocalizationProvider>
+                )}
               </div>
 
               {/* Customer Details */}
@@ -298,23 +424,42 @@ export default function CheckoutPage() {
                   <svg className="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  {orderType === 'DELIVERY' ? 'Delivery Details' : 'Customer Details'}
+                  {orderType === 'Delivery' ? 'Delivery Details' : 'Customer Details'}
                 </h2>
                 <div className="space-y-4">
                   <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
                     <p className="text-gray-400 text-sm mb-1">Name</p>
                     <p className="text-white font-semibold">{userData?.firstName} {userData?.lastName}</p>
                   </div>
-                  {orderType === 'DELIVERY' && (
+                  {orderType === 'Delivery' ? (
+                    <>
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-2">Delivery Address</label>
+                        <textarea
+                          value={deliveryAddress}
+                          onChange={(e) => setDeliveryAddress(e.target.value)}
+                          placeholder="Enter the address to deliver this order to"
+                          rows={2}
+                          className="w-full px-4 py-3 bg-black/50 border border-amber-900/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500 resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-gray-400 text-sm mb-2">Delivery Phone Number</label>
+                        <input
+                          type="tel"
+                          value={deliveryPhone}
+                          onChange={(e) => setDeliveryPhone(e.target.value)}
+                          placeholder="Enter a contact number for delivery"
+                          className="w-full px-4 py-3 bg-black/50 border border-amber-900/20 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-amber-500"
+                        />
+                      </div>
+                    </>
+                  ) : (
                     <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
-                      <p className="text-gray-400 text-sm mb-1">Delivery Address</p>
-                      <p className="text-white font-semibold">{userData?.address || 'Not provided'}</p>
+                      <p className="text-gray-400 text-sm mb-1">Phone Number</p>
+                      <p className="text-white font-semibold">{userData?.phoneNumber || deliveryPhone || 'Not provided'}</p>
                     </div>
                   )}
-                  <div className="bg-black/50 border border-amber-900/20 rounded-lg p-4">
-                    <p className="text-gray-400 text-sm mb-1">Phone Number</p>
-                    <p className="text-white font-semibold">{userData?.phoneNumber || 'Not provided'}</p>
-                  </div>
                 </div>
               </div>
             </div>
@@ -329,7 +474,7 @@ export default function CheckoutPage() {
                     <span>Subtotal</span>
                     <span>{totalPrice.toFixed(2)} LKR</span>
                   </div>
-                  {orderType === 'DELIVERY' && (
+                  {orderType === 'Delivery' && (
                     <div className="flex justify-between text-gray-300">
                       <span>Delivery Fee</span>
                       <span>{deliveryFee.toFixed(2)} LKR</span>

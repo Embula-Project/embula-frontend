@@ -11,19 +11,23 @@ const CHECKOUT_BASE_URL = '/api/v1/food-order';
  * @param {string} orderData.orderName - Summary of order items
  * @param {string} orderData.currency - Currency code (LKR)
  * @param {string} orderData.orderDescription - Detailed order description
- * @param {string} orderData.orderType - DINE_IN, TAKE_AWAY, or DELIVERY
+ * @param {string} orderData.orderType - DineIn, TakeAway, or Delivery
  * @param {Array} orderData.orderFoodItems - Array of food items with details
+ * @param {string} [orderData.scheduledDate] - Requested date (yyyy-MM-dd) for DineIn/TakeAway
+ * @param {string} [orderData.scheduledTime] - Requested time (HH:mm) for DineIn/TakeAway
+ * @param {string} [orderData.deliveryAddress] - Delivery address for Delivery orders
+ * @param {string} [orderData.deliveryPhone] - Delivery contact phone for Delivery orders
  * @returns {Promise<Object>} Checkout session response with payment URL
  */
 export async function createCheckoutSession(orderData) {
   try {
     const customerId = getUserId();
     const customerEmail= getUserEmail();
-    
+
     if (!customerId) {
       throw new Error('User not authenticated. Please login again.');
     }
-    
+
     const payload = {
       amount: orderData.amount,
       quantity: orderData.quantity || 1,
@@ -32,8 +36,12 @@ export async function createCheckoutSession(orderData) {
       customerId: customerId.toString(),
       customerEmail:customerEmail,
       orderDescription: orderData.orderDescription,
-      orderType: orderData.orderType || 'DINE_IN',
-      orderFoodItems: orderData.orderFoodItems
+      orderType: orderData.orderType || 'DineIn',
+      orderFoodItems: orderData.orderFoodItems,
+      scheduledDate: orderData.scheduledDate,
+      scheduledTime: orderData.scheduledTime,
+      deliveryAddress: orderData.deliveryAddress,
+      deliveryPhone: orderData.deliveryPhone
     };
 
     console.log('[CheckoutService] Creating checkout session with payload:', JSON.stringify(payload, null, 2));
@@ -68,7 +76,7 @@ export async function createCheckoutSession(orderData) {
  * Formats cart items into backend-expected structure with all required fields
  * 
  * @param {Array} cartItems - Array of cart items from Redux
- * @param {string} orderType - Order type: 'DINE_IN', 'TAKE_AWAY', or 'DELIVERY'
+ * @param {string} orderType - Order type: 'DineIn', 'TakeAway', or 'Delivery'
  * @returns {Object} Complete order data for checkout API
  */
 export function prepareOrderData(cartItems, orderType = 'DineIn') {
@@ -84,8 +92,8 @@ export function prepareOrderData(cartItems, orderType = 'DineIn') {
     return sum + (Number(item.price) || 0) * (item.qty || 0);
   }, 0);
 
-  // Add delivery fee (only for DELIVERY type)
-  const deliveryFee = orderType === 'DELIVERY' ? 200.00 : 0;
+  // Add delivery fee (only for Delivery type)
+  const deliveryFee = orderType === 'Delivery' ? 200.00 : 0;
   const totalAmount = subtotal + deliveryFee;
 
   // Create order name (short summary)
@@ -153,5 +161,86 @@ export async function verifyPaymentSuccess(sessionId) {
   } catch (error) {
     console.error('[CheckoutService] Error verifying payment:', error);
     throw error;
+  }
+}
+
+const LAST_ORDER_FAILED_KEY = 'lastOrderFailed';
+const LAST_ORDER_SUCCEEDED_KEY = 'lastOrderSucceeded';
+
+/**
+ * Clear the cart from localStorage after a confirmed order outcome.
+ * Call after payment is verified as successful, or after it fails/is cancelled.
+ *
+ * Note: this only clears localStorage. The checkout tab that still holds the
+ * cart in Redux is a *different* browser tab (Stripe opens in a new tab), so
+ * it won't see this change on its own — pair this with markLastOrderSucceeded()
+ * or markLastOrderFailed() so that tab can clear its Redux state too once the
+ * user returns to it (see consumeLastOrderSucceeded/consumeLastOrderFailed).
+ */
+export function clearPendingCart() {
+  try {
+    localStorage.removeItem('cartItems');
+  } catch (e) {
+    console.error('[CheckoutService] Failed to clear cart from localStorage', e);
+  }
+}
+
+/**
+ * Mark that the last checkout attempt succeeded, so the tab the user returns
+ * to (e.g. Home) can clear its in-memory Redux cart, which otherwise doesn't
+ * know the order in the other tab was completed.
+ */
+export function markLastOrderSucceeded() {
+  try {
+    localStorage.setItem(LAST_ORDER_SUCCEEDED_KEY, '1');
+  } catch (e) {
+    console.error('[CheckoutService] Failed to persist order-succeeded flag', e);
+  }
+}
+
+/**
+ * Read and clear the "last order succeeded" flag (one-time read).
+ * @returns {boolean} True if a successful order is pending acknowledgement
+ */
+export function consumeLastOrderSucceeded() {
+  try {
+    const flag = localStorage.getItem(LAST_ORDER_SUCCEEDED_KEY);
+    if (flag) {
+      localStorage.removeItem(LAST_ORDER_SUCCEEDED_KEY);
+    }
+    return !!flag;
+  } catch (e) {
+    console.error('[CheckoutService] Failed to read order-succeeded flag', e);
+    return false;
+  }
+}
+
+/**
+ * Mark that the last checkout attempt failed/was cancelled, so the next page
+ * the user lands on (e.g. Home) can show a one-time notice.
+ * @param {string} [message] - Optional reason to display
+ */
+export function markLastOrderFailed(message) {
+  try {
+    localStorage.setItem(LAST_ORDER_FAILED_KEY, message || 'Your last order could not be completed.');
+  } catch (e) {
+    console.error('[CheckoutService] Failed to persist order-failed flag', e);
+  }
+}
+
+/**
+ * Read and clear the "last order failed" flag (one-time read).
+ * @returns {string|null} The failure message if one is pending, otherwise null
+ */
+export function consumeLastOrderFailed() {
+  try {
+    const message = localStorage.getItem(LAST_ORDER_FAILED_KEY);
+    if (message) {
+      localStorage.removeItem(LAST_ORDER_FAILED_KEY);
+    }
+    return message;
+  } catch (e) {
+    console.error('[CheckoutService] Failed to read order-failed flag', e);
+    return null;
   }
 }
